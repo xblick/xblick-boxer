@@ -1,0 +1,47 @@
+[project]
+name = "durchblick-boxer"
+version = "0.1.0"
+description = "Meta's Boxer (3D boxes from open-vocabulary 2D detections) as a Durchblick vision node"
+readme = "README.md"
+license = "CC-BY-NC-4.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{ name = "David Schneider" }]
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "blick>=0.4,<0.5",  # the Durchblick core: node, poses, tensors, mps, parameters, vision_msgs
+    # Boxer's model code (third_party/boxer: BoxerNet, DINOv3, OWLv2); its own requirements: torch>=2.0, numpy, opencv
+    "torch>=2.4",
+    "numpy>=1.26",
+    "opencv-python-headless>=4.8",
+]
+
+[project.scripts]
+durchblick-boxer = "durchblick_boxer.node:main"
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[build-system]
+requires = ["uv_build>=0.8,<0.11"]
+build-backend = "uv_build"
+
+[tool.uv]
+index-strategy = "unsafe-best-match"
+
+[tool.uv.sources]
+# the Durchblick core from its main branch, built from source; uv.lock fixes the commit
+"blick" = { git = "https://github.com/xblick/durchblick", branch = "main" }
+"torch" = { index = "pytorch-cu130" }
+
+[[tool.uv.index]]
+name = "pytorch-cu130"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["third_party"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

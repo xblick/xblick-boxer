@@ -1,0 +1,32 @@
+durchblick-boxer
+Copyright 2026 David Schneider
+
+This repository is licensed under the Creative Commons Attribution-NonCommercial 4.0 International Public License
+(CC BY-NC 4.0, see LICENSE).
+
+Boxer
+-----
+
+The node runs Boxer by Meta (https://github.com/facebookresearch/boxer): BoxerNet, its DINOv3 and OWLv2 parts, and
+the checkpoints. Boxer's code and checkpoints are under CC BY-NC 4.0. Boxer's own LICENSE and NOTICE (with the
+licences of the parts Boxer contains) are in third_party/boxer, a git submodule at a fixed commit. tools/setup.sh
+downloads the checkpoints from Hugging Face (facebook/boxer). This repository contains no copy of Boxer's code or
+checkpoints.
+
+Adapted from Boxer
+------------------
+
+sdp_from_depth in src/durchblick_boxer/boxer.py is adapted from BaseLoader.sdp_from_depth in Boxer's
+loaders/base_loader.py. Both compute the semi-dense points of a depth image in the world: the same grid step, the same
+pinhole unprojection, the same rotation and translation into the world, at most num_samples points, padded with NaN
+to num_samples. The changes:
+
+- It takes the depth image as a PyTorch tensor and computes with PyTorch on the tensor's device (the GPU in the
+  node). Boxer's function takes a NumPy array and computes with NumPy on the CPU.
+- It takes the grid's pixels by strided slicing and torch.meshgrid. Boxer's function uses numpy.mgrid and index
+  arrays. Both take the same pixels.
+- It chooses the points above num_samples with torch.randperm on the device. Boxer's function uses
+  numpy.random.choice without replacement. Both choose uniformly without replacement, with different random numbers.
+- It returns the points on the device of the depth image. Boxer's function returns a CPU tensor.
+- It has no case for a missing depth image. Boxer's function returns an empty tensor for None. The node calls it only
+  with a depth image.
