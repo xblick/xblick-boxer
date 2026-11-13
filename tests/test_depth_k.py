@@ -1,8 +1,8 @@
-"""The colour camera's K for a depth at another size (durchblick-fast-foundationstereo's --max-width)."""
+"""The colour camera's K for a depth at another size (xblick-fast-foundationstereo's --max-width)."""
 
 import pytest
 
-from durchblick_boxer.boxer import depth_k
+from xblick_boxer.boxer import depth_k
 
 
 def test_depth_k_at_the_same_and_at_half_size():

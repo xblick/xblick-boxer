@@ -1,6 +1,6 @@
 # Performance
 
-This page states how fast durchblick-boxer is, how we measured it, which changes made it fast, and which changes
+This page states how fast xblick-boxer is, how we measured it, which changes made it fast, and which changes
 did not help. The [README](../README.md) has the short version.
 
 ## Result
@@ -103,7 +103,7 @@ uint8. The node also computes Boxer's semi-dense points from the depth image on 
 
 With `--local cuda`, the node reads the frames from the camera's CUDA ring, and they never leave the GPU.
 
-We made this change on 2026-10-30 and have not timed it on the test frame. The README of durchblick-mapping has a
+We made this change on 2026-10-30 and have not timed it on the test frame. The README of xblick-mapping has a
 measurement with the mapping nodes on one GPU, in its section "Measured". It states about 50 frames per second at
 720p, for the host ring and the CUDA ring alike.
 
@@ -163,4 +163,4 @@ the frame to the boxes. They would not raise the rate.
 - We have not timed the GPU resize and the GPU depth points on the test frame.
 - We have not recorded the VRAM that the node needs.
 
-[Making a node fast](https://github.com/xblick/durchblick/blob/main/docs/guides/making-a-node-fast.md) compares these findings with Durchblick's other nodes.
+[Making a node fast](https://github.com/xblick/xblick/blob/main/docs/guides/making-a-node-fast.md) compares these findings with Durchblick's other nodes.

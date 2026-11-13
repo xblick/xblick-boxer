@@ -23,7 +23,7 @@ CHECKPOINT = "boxernet_hw960in2x6d768-c88128f8.ckpt"
 
 def depth_k(k, size, depth_shape) -> tuple[float, float, float, float]:
     """The colour camera's (fx, fy, cx, cy) for its image of ``size`` (w, h) as the depth's of ``depth_shape`` (h, w):
-    a depth in the colour camera's geometry at another size (durchblick-fast-foundationstereo's with --max-width),
+    a depth in the colour camera's geometry at another size (xblick-fast-foundationstereo's with --max-width),
     f and the principal point scaled about the pixels' centres (c' = (c + 0.5) s - 0.5)."""
     fx, fy, cx, cy = k
     w, h = size

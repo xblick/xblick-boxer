@@ -1,6 +1,6 @@
-"""durchblick-boxer: Boxer (boxer.py) on a camera's Durchblick streams, its results as ROS's vision_msgs.
+"""xblick-boxer: Boxer (boxer.py) on a camera's Durchblick streams, its results as ROS's vision_msgs.
 
-    durchblick-boxer --camera robot/camera --labels box can bottle \
+    xblick-boxer --camera robot/camera --labels box can bottle \
                      [--color <camera>/color] [--depth <camera>/depth | --no-depth] [--node boxer] \
                      [--thresh2d 0.2] [--thresh3d 0.5] [--max-offset-ms MS] [--pose-wait-ms 200] [--features]
                      [--local shm|cuda]
@@ -10,7 +10,7 @@ Reads the newest colour frame with its camera_info and, taken with it, the depth
 --max-offset-ms, by default half the depth's frame period; 16UC1 mm or 32FC1 m, in the colour camera's geometry: the
 simulation's depth, the Azure Kinect's depth_to_color) and the camera's pose at the frame's stamp from ``<camera>/tf``
 (Boxer needs the gravity direction, the world's z): the pose of that stamp, else interpolated between the two around it
-(blick.poses, Durchblick 0.3.4: the robot's camera poses come with its state, at their own rate).
+(xblick.poses, Durchblick 0.3.4: the robot's camera poses come with its state, at their own rate).
 Publishes, stamped as the frame and in its camera frame:
 
 * ``<camera>/<node>/detections_2d``  vision_msgs/Detection2DArray: OWLv2's 2D boxes (pixels of the colour image)
@@ -37,12 +37,12 @@ import sys
 import threading
 import time
 
-import blick as db
-from blick import mps, node, poses, tensors, topics
-from blick.camera import check_local
-from blick.history import PartnerHistory
-from blick.poses import CameraPoses
-from blick.session import add_arguments, open_from_args
+import xblick as db
+from xblick import mps, node, poses, tensors, topics
+from xblick.camera import check_local
+from xblick.history import PartnerHistory
+from xblick.poses import CameraPoses
+from xblick.session import add_arguments, open_from_args
 
 
 def to_messages(result, header: db.Header) -> tuple[db.Detection2DArray, db.Detection3DArray]:
@@ -75,7 +75,7 @@ def split_labels(given: list[str]) -> list[str]:
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(prog="durchblick-boxer", description=__doc__,
+    parser = argparse.ArgumentParser(prog="xblick-boxer", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--camera", required=True, help="the camera's base, e.g. robot/camera")
     parser.add_argument("--labels", required=True, nargs="+",
@@ -122,7 +122,7 @@ def main(argv=None) -> int:
     color_base = args.color or f"{camera}/color"
     depth_base = None if args.no_depth else (args.depth or f"{camera}/depth")
 
-    node.start("durchblick-boxer", max_hz=args.max_hz, local=args.local)
+    node.start("xblick-boxer", max_hz=args.max_hz, local=args.local)
 
     import torch  # noqa: PLC0415 - with the models, after the arguments are checked
 
@@ -139,9 +139,9 @@ def main(argv=None) -> int:
                                         db.Detection2DArray)
     boxes3d_pub = db.DetectionPublisher(session, topics.detections(camera, args.node, "boxes_3d"),
                                         db.Detection3DArray)
-    report = node.Reporter(session, camera, args.node, "durchblick-boxer", max_hz=args.max_hz)
+    report = node.Reporter(session, camera, args.node, "xblick-boxer", max_hz=args.max_hz)
     report.watch(color)
-    print(f"durchblick-boxer: {color_base}" + (f" + {depth_base}" if depth_base else "") +
+    print(f"xblick-boxer: {color_base}" + (f" + {depth_base}" if depth_base else "") +
           f" -> {camera}/{args.node}/{{detections_2d,boxes_3d}}, prompts {labels}", flush=True)
     counts = report.counts
     stop = threading.Event()
@@ -168,7 +168,7 @@ def main(argv=None) -> int:
                 wanted = split_labels(params["labels"])
                 if wanted != boxer.labels:
                     boxer.set_labels(wanted)
-                    print(f"durchblick-boxer: prompts {wanted} (parameter labels)", flush=True)
+                    print(f"xblick-boxer: prompts {wanted} (parameter labels)", flush=True)
                 depth_frame = None
                 if depth is not None:  # with the colour frame, before the work on it (it may come a little after)
                     depth.check()
@@ -197,7 +197,7 @@ def main(argv=None) -> int:
             except queue.Empty:
                 item = None
             if failure:
-                raise RuntimeError("durchblick-boxer: the detection stage failed") from failure[0]
+                raise RuntimeError("xblick-boxer: the detection stage failed") from failure[0]
             boxer.thresh3d = params["thresh3d"]  # the lifting's live parameter, in its thread
             if item is not None:
                 frame, info, depth_frame, detections, started = item

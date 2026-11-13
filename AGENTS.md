@@ -1,11 +1,11 @@
 # AGENTS.md
 
-durchblick-boxer: Meta's Boxer as a Durchblick vision node (Python 3.12, uv project). OWLv2 finds 2D boxes for text
+xblick-boxer: Meta's Boxer as a Durchblick vision node (Python 3.12, uv project). OWLv2 finds 2D boxes for text
 prompts (`--labels`), BoxerNet lifts them to oriented 3D boxes from DINOv3 features, depth points and gravity (from
 the camera's pose on `<camera>/tf`). Human documentation: README.md (entry), docs/topics.md, docs/performance.md,
 docs/design.md. Style of all documentation: the core's docs/project/writing-docs.md. Transport-wide
 traps (Zenoh sessions and routers, CUDA rings, hanging tests): AGENTS.md of the core repository
-(github.com/xblick/durchblick).
+(github.com/xblick/xblick).
 
 ## Commands
 
@@ -13,16 +13,16 @@ traps (Zenoh sessions and routers, CUDA rings, hanging tests): AGENTS.md of the 
 tools/setup.sh                            # submodule, checkpoints (1.2 GB, SHA-256 checked), .venv from uv.lock
 .venv/bin/python -m pytest tests -q       # always name tests/: plain pytest collects third_party/boxer and fails
 .venv/bin/ruff check src tests            # lint: 120 columns, third_party excluded (pyproject [tool.ruff])
-.venv/bin/durchblick-boxer --camera robot/camera --depth robot/camera/depth_to_color \
+.venv/bin/xblick-boxer --camera robot/camera --depth robot/camera/depth_to_color \
   --labels "cracker box,sugar box" [--features]      # needs zenohd on the PC (7447)
-blick rerun --spawn                       # viewer
+xblick rerun --spawn                       # viewer
 ```
 
 - `tests/test_node.py`: conversions (quaternions, vision_msgs, depth), no GPU.
 - `tests/test_boxer.py` (GPU, checkpoints): GPU semi-dense points against Boxer's own on a synthetic depth image. Two
   tests need the simulation frame `tests/data/sim_ycb*.png`, which this branch does not contain: they skip.
-- Durchblick (`blick`): git main of github.com/xblick/durchblick, fixed by `uv.lock`. Newer Durchblick needed: raise
-  the pin in `pyproject.toml`, then `uv lock`.
+- Durchblick (`xblick`): github.com/xblick/xblick at the commit in `pyproject.toml`. Newer Durchblick needed: raise
+  the pin and the rev in `pyproject.toml`, then `uv lock`.
 - Without a camera: a simulation that publishes colour, depth and the camera's pose.
 
 ## Rules
@@ -65,8 +65,8 @@ blick rerun --spawn                       # viewer
 
 | Path | Content |
 | --- | --- |
-| `src/durchblick_boxer/node.py` | the node: options, inputs, pairing, two-stage pipeline, publishing |
-| `src/durchblick_boxer/boxer.py` | Boxer on one image: OWLv2, BoxerNet, `sdp_from_depth`, Boxer's imports |
+| `src/xblick_boxer/node.py` | the node: options, inputs, pairing, two-stage pipeline, publishing |
+| `src/xblick_boxer/boxer.py` | Boxer on one image: OWLv2, BoxerNet, `sdp_from_depth`, Boxer's imports |
 | `tests/` | node and GPU tests |
 | `third_party/boxer` (submodule), its `ckpts/` | Boxer's code at a fixed commit, the downloaded checkpoints |
 | `tools/setup.sh` | setup |
@@ -78,7 +78,7 @@ blick rerun --spawn                       # viewer
 | --- | --- |
 | Inputs | `<camera>/color` + `camera_info`, `<camera>/depth` (16UC1 mm or 32FC1 m), `<camera>/tf` |
 | Outputs | `<camera>/boxer/detections_2d`, `<camera>/boxer/boxes_3d` (`vision_msgs`), status `boxer` on `<camera>/diagnostics` |
-| `--features` | image stream `<camera>/boxer/dino`, `16FC384`, 60 x 60 patches, read by durchblick-nvblox |
+| `--features` | image stream `<camera>/boxer/dino`, `16FC384`, 60 x 60 patches, read by xblick-nvblox |
 | `--node` | `boxer` |
 | `--thresh2d` / `--thresh3d` | 0.2 / 0.5 |
 | `--max-offset-ms` / `--pose-wait-ms` | half the depth's frame period / 200 |

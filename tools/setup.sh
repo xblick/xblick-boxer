@@ -1,5 +1,5 @@
 #!/bin/bash
-# Sets durchblick-boxer up from scratch or updates it: Boxer's source (the submodule), its checkpoints (1.2 GB,
+# Sets xblick-boxer up from scratch or updates it: Boxer's source (the submodule), its checkpoints (1.2 GB,
 # CC-BY-NC, from Hugging Face; only those missing, each checked against its SHA-256), the venv exactly as uv.lock
 # fixes it (.venv):
 #

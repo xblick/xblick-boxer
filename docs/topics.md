@@ -1,6 +1,6 @@
 # Topics and options
 
-This page lists what durchblick-boxer reads, what it publishes, and every option of the node.
+This page lists what xblick-boxer reads, what it publishes, and every option of the node.
 
 ## Inputs
 
@@ -16,7 +16,7 @@ This page lists what durchblick-boxer reads, what it publishes, and every option
 The node pairs each colour frame with the depth frame whose stamp is nearest. The two stamps may differ by at most
 `--max-offset-ms`. The default is half the frame period of the depth stream, which the node measures. The node
 reads the depth frame together with the colour frame.
-[Pairing streams](https://github.com/xblick/durchblick/blob/main/docs/guides/pairing-streams.md) describes the mechanism.
+[Pairing streams](https://github.com/xblick/xblick/blob/main/docs/guides/pairing-streams.md) describes the mechanism.
 
 With `--no-depth` the node needs no depth stream. Boxer then estimates distances from the image alone.
 
@@ -52,7 +52,7 @@ so only while somebody subscribes.
 - A reader on the same host gets the features on the GPU through the `cuda` transport. Other readers receive
   2.8 MB per frame.
 
-durchblick-nvblox fuses these features into its map.
+xblick-nvblox fuses these features into its map.
 
 ### The status
 
@@ -90,12 +90,12 @@ node's GPU. Otherwise it reads from the host ring in shared memory. `shm` and `c
 every report state which transport each stream uses.
 
 **MPS.** If you set `CUDA_MPS_PIPE_DIRECTORY`, the node expects an MPS daemon and stops at start when none answers.
-[Sharing a GPU](https://github.com/xblick/durchblick/blob/main/docs/guides/sharing-a-gpu.md) explains MPS.
+[Sharing a GPU](https://github.com/xblick/xblick/blob/main/docs/guides/sharing-a-gpu.md) explains MPS.
 
 ## Parameters
 
 Every option is also a parameter of the node `<camera>/<node>`, for example `robot/camera/boxer`. The live ones
 change while the node runs: `labels`, `thresh2d`, `thresh3d`, `pose_wait_ms`; the tables mark them. The others are
 read-only and apply at the next start, where `--param NAME:=VALUE` or `--params-file FILE` set them. New labels are
-OWLv2's prompts from the next frame on. Durchblick's terminal interface (`blick`, tab Parameters) and `durchblick
+OWLv2's prompts from the next frame on. Durchblick's terminal interface (`xblick`, tab Parameters) and `xblick
 param` show them.

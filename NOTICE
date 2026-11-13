@@ -1,4 +1,4 @@
-durchblick-boxer
+xblick-boxer
 Copyright 2026 David Schneider
 
 This repository is licensed under the Creative Commons Attribution-NonCommercial 4.0 International Public License
@@ -16,7 +16,7 @@ checkpoints.
 Adapted from Boxer
 ------------------
 
-sdp_from_depth in src/durchblick_boxer/boxer.py is adapted from BaseLoader.sdp_from_depth in Boxer's
+sdp_from_depth in src/xblick_boxer/boxer.py is adapted from BaseLoader.sdp_from_depth in Boxer's
 loaders/base_loader.py. Both compute the semi-dense points of a depth image in the world: the same grid step, the same
 pinhole unprojection, the same rotation and translation into the world, at most num_samples points, padded with NaN
 to num_samples. The changes:

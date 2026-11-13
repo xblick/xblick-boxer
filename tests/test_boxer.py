@@ -11,7 +11,7 @@ import pytest
 import torch
 from PIL import Image
 
-from durchblick_boxer.boxer import BOXER_ROOT, CHECKPOINT
+from xblick_boxer.boxer import BOXER_ROOT, CHECKPOINT
 
 DATA = Path(__file__).parent / "data"
 pytestmark = [
@@ -27,7 +27,7 @@ YCB = {"cracker box": (0.26, 0.66), "sugar box": (-0.05, 0.60), "tomato soup can
 
 @needs_frame
 def test_boxes_where_the_objects_stand():
-    from durchblick_boxer.boxer import Boxer
+    from xblick_boxer.boxer import Boxer
 
     rgb = np.asarray(Image.open(DATA / "sim_ycb.png").convert("RGB"))
     depth = np.asarray(Image.open(DATA / "sim_ycb.depth.png")).astype(np.float32) / 1000.0
@@ -56,7 +56,7 @@ def test_boxes_where_the_objects_stand():
 def test_sdp_from_depth_as_boxers():
     """The GPU port gives Boxer's own (NumPy) semi-dense points (num_samples above the valid pixels: no random
     choice)."""
-    from durchblick_boxer.boxer import _import_boxer, sdp_from_depth
+    from xblick_boxer.boxer import _import_boxer, sdp_from_depth
 
     _import_boxer()
     from loaders.base_loader import BaseLoader
@@ -78,7 +78,7 @@ def test_sdp_from_depth_as_boxers():
 def test_labels_and_the_2d_threshold_change_while_it_runs():
     """New labels (the node's live parameter labels) are OWLv2's prompts from the next detection on; the 2D threshold
     is OWLv2's own."""
-    from durchblick_boxer.boxer import Boxer
+    from xblick_boxer.boxer import Boxer
 
     rgb = np.asarray(Image.open(DATA / "sim_ycb.png").convert("RGB"))
     boxer = Boxer(list(YCB), thresh2d=0.1, thresh3d=0.3)

@@ -1,6 +1,6 @@
 # Design
 
-This page explains how durchblick-boxer works inside, which decisions we made, and what we tested with which
+This page explains how xblick-boxer works inside, which decisions we made, and what we tested with which
 result.
 
 ## What the node computes per frame
@@ -96,7 +96,7 @@ Notes on the table:
 - OWLv2 named the cracker box "sugar box" in most frames of both measurements.
 - In the first measurement, the node did not find the mustard bottle and the soup can. The thresholds were 0.1 and
   0.3. In the still frame of the test, the node found the mustard bottle within 0.6 cm.
-- `blick rerun --save` recorded the 3D boxes, placed with the moving camera, and the 2D boxes in the image.
+- `xblick rerun --save` recorded the 3D boxes, placed with the moving camera, and the 2D boxes in the image.
 
 ## Status and limits
 
@@ -106,5 +106,5 @@ Notes on the table:
 - **Prompts.** OWLv2 confuses similar objects such as the cracker box and the sugar box. This is a problem of the
   2D detection. The lifting is correct. Better prompts or another 2D detector could help. Boxer's paper also uses
   DETIC and SAM3.
-- durchblick-boxer was the first vision node on Durchblick. It works in the same way on a robot's camera and on the
+- xblick-boxer was the first vision node on Durchblick. It works in the same way on a robot's camera and on the
   camera of a simulation.

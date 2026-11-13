@@ -1,10 +1,10 @@
 """The node's conversions, without a GPU: Boxer's result as vision_msgs."""
 
-import blick as db
 import numpy as np
-from blick.poses import rotation_from_quaternion
+import xblick as db
+from xblick.poses import rotation_from_quaternion
 
-from durchblick_boxer.boxer import Box2D, Box3D, Result
+from xblick_boxer.boxer import Box2D, Box3D, Result
 
 
 def random_rotation(rng) -> np.ndarray:
@@ -13,7 +13,7 @@ def random_rotation(rng) -> np.ndarray:
 
 
 def test_result_as_vision_msgs():
-    from durchblick_boxer.node import to_messages
+    from xblick_boxer.node import to_messages
 
     r = random_rotation(np.random.default_rng(1))
     result = Result([Box2D(10.0, 20.0, 50.0, 80.0, "mug", 0.4)],

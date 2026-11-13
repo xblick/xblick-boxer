@@ -1,10 +1,10 @@
-# durchblick-boxer
+# xblick-boxer
 
-durchblick-boxer finds the objects that a camera sees and publishes an oriented 3D box for each of them. It runs
+xblick-boxer finds the objects that a camera sees and publishes an oriented 3D box for each of them. It runs
 Meta's [Boxer](https://huggingface.co/facebook/boxer) on the camera's colour, depth and pose streams and keeps up
 with a 30 Hz camera.
 
-It is a node of [Durchblick](https://github.com/xblick/durchblick). You name the objects with text
+It is a node of [Durchblick](https://github.com/xblick/xblick). You name the objects with text
 prompts, so the node needs no fixed class list. Use it when you need the place, size and orientation of objects.
 
 ## What it publishes
@@ -25,7 +25,7 @@ Details: [docs/topics.md](docs/topics.md).
 
 - An NVIDIA GPU with CUDA. We measured on an RTX PRO 6000. Alone on that GPU the node held 1.7 GiB of VRAM
   (four labels, `--features`, 1280 x 720 at 30 frames per second, 2026-11-02).
-- Durchblick 0.4 or newer, below 0.5 (Python package `blick`). The setup script installs it from source.
+- Durchblick 0.5 or newer, below 0.6 (Python package `xblick`). The setup script installs it from source.
 - [uv](https://docs.astral.sh/uv/), curl and git.
 - A depth stream in the geometry of the colour camera, and the camera's pose in a world whose z axis points up.
 - Boxer's code and checkpoints are under CC BY-NC 4.0, and so is this repository. You may not use them commercially.
@@ -45,10 +45,10 @@ PyTorch for CUDA 13. A second call does only what changed.
 ## Run
 
 Start the node on a camera. `robot/camera` is an example name. The node connects to the Zenoh router of the
-PC (`zenohd` on port 7447), which [Sessions](https://github.com/xblick/durchblick/blob/main/docs/concepts/sessions.md) explains.
+PC (`zenohd` on port 7447), which [Sessions](https://github.com/xblick/xblick/blob/main/docs/concepts/sessions.md) explains.
 
 ```bash
-.venv/bin/durchblick-boxer --camera robot/camera --depth robot/camera/depth_to_color \
+.venv/bin/xblick-boxer --camera robot/camera --depth robot/camera/depth_to_color \
   --labels "cracker box,sugar box,tomato soup can,mustard bottle"
 ```
 
@@ -56,7 +56,7 @@ Look at the result in Durchblick's viewer. Without options, it shows every strea
 finds.
 
 ```bash
-blick rerun --spawn
+xblick rerun --spawn
 ```
 
 The options that most users change:
@@ -76,7 +76,7 @@ The options that most users change:
 All options: [docs/topics.md](docs/topics.md#options).
 
 Every option is also a parameter of the node `<camera>/<node>`, for example `robot/camera/boxer`. Durchblick's
-terminal interface (`blick`, tab Parameters) and `blick param` show them. `labels`, `thresh2d`, `thresh3d` and
+terminal interface (`xblick`, tab Parameters) and `xblick param` show them. `labels`, `thresh2d`, `thresh3d` and
 `pose_wait_ms` change while the node runs: new labels are OWLv2's prompts from the next frame on. The other options
 apply at the next start, where `--param NAME:=VALUE` or `--params-file FILE` set them.
 
@@ -95,7 +95,7 @@ The measurements, the method and what did not help: [docs/performance.md](docs/p
 
 ## Limits
 
-- Version 0.1.0. We tested the node on a simulation. We have not tested it on a robot.
+- Version 0.2.0. We tested the node on a simulation. We have not tested it on a robot.
 - OWLv2 confuses similar objects. It names the cracker box "sugar box" in most frames.
 - The node does not use Boxer's tracking or its multi-view fusion. A box has no id over frames.
 - The node skips a frame whose pose or depth does not arrive.
@@ -105,8 +105,8 @@ The measurements, the method and what did not help: [docs/performance.md](docs/p
 - [docs/topics.md](docs/topics.md): inputs, messages and all options.
 - [docs/performance.md](docs/performance.md): measurements, what we changed, what did not help.
 - [docs/design.md](docs/design.md): how the node works inside, the decisions, the tests and their results.
-- Durchblick: [Streams and topics](https://github.com/xblick/durchblick/blob/main/docs/concepts/streams-and-topics.md), [Transports](https://github.com/xblick/durchblick/blob/main/docs/concepts/transports.md),
-  [Pairing streams](https://github.com/xblick/durchblick/blob/main/docs/guides/pairing-streams.md), [Making a node fast](https://github.com/xblick/durchblick/blob/main/docs/guides/making-a-node-fast.md).
+- Durchblick: [Streams and topics](https://github.com/xblick/xblick/blob/main/docs/concepts/streams-and-topics.md), [Transports](https://github.com/xblick/xblick/blob/main/docs/concepts/transports.md),
+  [Pairing streams](https://github.com/xblick/xblick/blob/main/docs/guides/pairing-streams.md), [Making a node fast](https://github.com/xblick/xblick/blob/main/docs/guides/making-a-node-fast.md).
 
 ## Licence and credits
 
@@ -117,6 +117,6 @@ The node runs Meta's [Boxer](https://github.com/facebookresearch/boxer). Boxer, 
 Meta's work under CC BY-NC 4.0. Meta's `LICENSE` and `NOTICE` are in `third_party/boxer`. Boxer is a git submodule at
 a fixed commit, and the setup script downloads the checkpoints. This repository contains no copy of them.
 
-The function `sdp_from_depth` in `src/durchblick_boxer/boxer.py` is adapted from `BaseLoader.sdp_from_depth` in
+The function `sdp_from_depth` in `src/xblick_boxer/boxer.py` is adapted from `BaseLoader.sdp_from_depth` in
 Boxer's `loaders/base_loader.py`. It computes the same points with PyTorch on the device of the depth image.
 [NOTICE](NOTICE) lists the changes.
