@@ -49,11 +49,11 @@ authors).
 
 ## Run
 
-Start the node on a camera. `test/camera` is an example name. The node connects to the Zenoh router of the
-PC (`zenohd` on port 7447), which [Sessions](https://github.com/xblick/xblick/blob/main/docs/concepts/sessions.md) explains.
+Start the node on a camera. `cam/azurekinect`, the Azure Kinect node's default, is an example name. The node
+connects to the Zenoh router of the PC (`zenohd` on port 7447), which [Sessions](https://github.com/xblick/xblick/blob/main/docs/concepts/sessions.md) explains.
 
 ```bash
-.venv/bin/xblick-boxer --camera test/camera --depth test/camera/depth_to_color \
+.venv/bin/xblick-boxer --camera cam/azurekinect --depth cam/azurekinect/depth_to_color \
   --labels "cracker box,sugar box,tomato soup can,mustard bottle"
 ```
 
@@ -80,7 +80,7 @@ The options that most users change:
 
 All options: [docs/topics.md](docs/topics.md#options).
 
-Every option is also a parameter of the node `<camera>/<node>`, for example `test/camera/boxer`. Durchblick's
+Every option is also a parameter of the node `<camera>/<node>`, for example `cam/azurekinect/boxer`. Durchblick's
 terminal interface (`xblick`, tab Parameters) and `xblick param` show them. `labels`, `thresh2d`, `thresh3d` and
 `pose_wait_ms` change while the node runs: new labels are OWLv2's prompts from the next frame on. The other options
 apply at the next start, where `--param NAME:=VALUE` or `--params-file FILE` set them.

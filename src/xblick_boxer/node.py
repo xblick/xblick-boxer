@@ -1,7 +1,7 @@
 """xblick-boxer: Boxer (boxer.py) on a camera's Durchblick streams, its results as ROS's vision_msgs.
 
-    xblick-boxer --camera test/camera --labels box can bottle \
-                     [--color <camera>/color] [--depth <camera>/depth | --no-depth] [--node boxer] \
+    xblick-boxer --camera cam/azurekinect --depth cam/azurekinect/depth_to_color --labels box can bottle \
+                     [--color <camera>/color] [--no-depth, in place of --depth] [--node boxer] \
                      [--thresh2d 0.2] [--thresh3d 0.5] [--max-offset-ms MS] [--pose-wait-ms 200] [--features]
                      [--local shm|cuda]
                      [--connect ...] [--listen ...] [--config FILE]   (default: the PC's Zenoh router)
@@ -77,7 +77,7 @@ def split_labels(given: list[str]) -> list[str]:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="xblick-boxer", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--camera", required=True, help="the camera's base, e.g. test/camera")
+    parser.add_argument("--camera", required=True, help="the camera's base, e.g. cam/azurekinect")
     parser.add_argument("--labels", required=True, nargs="+",
                         help="text prompts: words, each also comma-separated, e.g. 'box,can,bottle' or box can "
                              "\"tomato soup can\"")
