@@ -28,7 +28,7 @@ Details: [docs/topics.md](docs/topics.md).
 - An NVIDIA GPU with CUDA. We measured on an RTX PRO 6000. Alone on that GPU the node held 1.7 GiB of VRAM
   (four labels, `--features`, 1280 x 720 at 30 frames per second, 2026-11-02).
 - Durchblick 0.5 or newer, below 0.6 (Python package `xblick`). The setup script installs it from source.
-- [uv](https://docs.astral.sh/uv/), curl and git.
+- [uv](https://docs.astral.sh/uv/) and git.
 - A depth stream in the geometry of the colour camera, and the camera's pose in a world whose z axis points up.
 - Boxer's code and checkpoints are under CC BY-NC 4.0, and so is this repository. You may not use them commercially.
 
@@ -40,12 +40,23 @@ Clone this repository and run the setup script.
 tools/setup.sh
 ```
 
-The script does three things. It fetches Boxer's source as a git submodule. It downloads Boxer's checkpoints
-(1.2 GB) from Hugging Face and checks their SHA-256. It creates `.venv` exactly as `uv.lock` fixes it, with
-PyTorch for CUDA 13. A second call does only what changed.
+The script does three things. It fetches Boxer's source as a git submodule. It creates `.venv` exactly as
+`uv.lock` fixes it, with PyTorch for CUDA 13. It runs `xblick-boxer --download-only`, which downloads Boxer's
+checkpoints (1.2 GB) from Hugging Face into the submodule's `ckpts/` and checks their SHA-256. A second call does
+only what changed.
 
-Before it downloads Boxer, the script prints Boxer's terms (CC BY-NC 4.0: no commercial use, credit to its
-authors).
+Before it downloads the checkpoints, the node prints Boxer's terms (CC BY-NC 4.0: no commercial use, credit to its
+authors). The node itself also downloads missing checkpoints at its start, before it loads the models. A preparation
+script downloads without a start:
+
+```bash
+.venv/bin/xblick-boxer --download-only
+```
+
+`--download-only` needs no camera, no Zenoh router and no GPU, and it exits with 0 when the checkpoints are
+complete. It needs Boxer's source, which only `tools/setup.sh` fetches. A machine that must never start a download
+on its own, such as a robot, starts the node with `--no-download`. The node then ends at once when a checkpoint is
+missing, and it names the file.
 
 ## Run
 
@@ -73,6 +84,8 @@ The options that most users change:
 | `--no-depth` | off | Work without depth. Boxer then estimates distances from the image alone. |
 | `--thresh2d` | 0.2 | The score threshold of OWLv2. Live: it changes while the node runs. |
 | `--thresh3d` | 0.5 | The confidence threshold of BoxerNet. Live: it changes while the node runs. |
+| `--no-download` | off | End at once when a checkpoint is missing. The node downloads nothing. |
+| `--download-only` | off | Download the missing checkpoints, check them and end. `--camera` and `--labels` may be left out. |
 | `--features` | off | Publish the DINOv3 features while somebody subscribes. |
 | `--max-hz` | 30 | The highest number of colour frames per second. `0` or `none` takes every frame. |
 | `--local` | `auto` | How the node reads a camera on the same host: `auto`, `shm` or `cuda`. |
@@ -100,10 +113,12 @@ The measurements, the method and what did not help: [docs/performance.md](docs/p
 
 ## Limits
 
-- Version 0.2.1. We tested the node on a simulation. We have not tested it on a robot.
+- Version 0.2.2. We tested the node on a simulation. We have not tested it on a robot.
 - OWLv2 confuses similar objects. It names the cracker box "sugar box" in most frames.
 - The node does not use Boxer's tracking or its multi-view fusion. A box has no id over frames.
 - The node skips a frame whose pose or depth does not arrive.
+- We tested the download against a local server. We have not downloaded the checkpoints from Hugging Face through
+  the node.
 
 ## Documentation
 

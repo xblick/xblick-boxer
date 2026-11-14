@@ -12,13 +12,11 @@ from __future__ import annotations
 import contextlib
 import sys
 from dataclasses import dataclass
-from pathlib import Path
 
 import numpy as np
 import torch
 
-BOXER_ROOT = Path(__file__).resolve().parents[2] / "third_party" / "boxer"
-CHECKPOINT = "boxernet_hw960in2x6d768-c88128f8.ckpt"
+from .weights import BOXER_ROOT, CHECKPOINT, CHECKPOINTS  # the checkpoints' one list (weights.py)
 
 
 def depth_k(k, size, depth_shape) -> tuple[float, float, float, float]:
@@ -61,12 +59,12 @@ def sdp_from_depth(depth_m: torch.Tensor, fx: float, fy: float, cx: float, cy: f
 def _import_boxer():
     """Boxer's modules (it is no package: its root goes on sys.path); fails with what to do."""
     if not (BOXER_ROOT / "boxernet" / "boxernet.py").exists():
-        raise SystemExit(f"Boxer's source is missing at {BOXER_ROOT}: git submodule update --init")
-    missing = [name for name in (CHECKPOINT, "dinov3_vits16plus_pretrain_lvd1689m-4057cbaa.pth",
-                                 "owlv2-base-patch16-ensemble.pt") if not (BOXER_ROOT / "ckpts" / name).exists()]
+        raise SystemExit(f"Boxer's source is missing at {BOXER_ROOT}: run tools/setup.sh (git submodule update "
+                         "--init)")
+    missing = [name for name in CHECKPOINTS if not (BOXER_ROOT / "ckpts" / name).exists()]
     if missing:
         raise SystemExit(f"Boxer's checkpoints are missing in {BOXER_ROOT / 'ckpts'}: {', '.join(missing)} "
-                         "(README: download them)")
+                         "(xblick-boxer --download-only downloads them)")
     if str(BOXER_ROOT) not in sys.path:
         sys.path.insert(0, str(BOXER_ROOT))
 

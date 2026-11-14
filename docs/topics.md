@@ -74,6 +74,8 @@ counts the skipped frames by cause: no pose, no depth, no `camera_info`.
 | `--max-offset-ms` | half the depth's frame period | The largest difference between the stamps of a colour frame and its depth frame. `0` demands equal stamps. |
 | `--pose-wait-ms` | 200 | How long the node waits for the pose of a frame. Live: it changes while the node runs. |
 | `--device` | `cuda` | The GPU of the node. |
+| `--no-download` | off | End at once when a checkpoint is missing, and name it. The node downloads nothing. |
+| `--download-only` | off | Download the missing checkpoints, check their SHA-256 and end. The node needs no camera, Zenoh router or GPU for it, and `--camera` and `--labels` may be left out. |
 | `--dino-beside-owl` | off | Compute the DINOv3 features beside OWLv2 on a CUDA stream of their own. It did not help in our measurements. |
 | `--features` | off | Publish the DINOv3 features. |
 | `--max-hz` | 30 | The highest number of colour frames per second. `0` or `none` takes every frame. |
@@ -98,4 +100,4 @@ Every option is also a parameter of the node `<camera>/<node>`, for example `cam
 change while the node runs: `labels`, `thresh2d`, `thresh3d`, `pose_wait_ms`; the tables mark them. The others are
 read-only and apply at the next start, where `--param NAME:=VALUE` or `--params-file FILE` set them. New labels are
 OWLv2's prompts from the next frame on. Durchblick's terminal interface (`xblick`, tab Parameters) and `xblick
-param` show them.
+param` show them. `--download-only` is a mode of the command line and has no parameter.

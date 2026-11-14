@@ -3,7 +3,7 @@
     xblick-boxer --camera cam/azurekinect --depth cam/azurekinect/depth_to_color --labels box can bottle \
                      [--color <camera>/color] [--no-depth, in place of --depth] [--node boxer] \
                      [--thresh2d 0.2] [--thresh3d 0.5] [--max-offset-ms MS] [--pose-wait-ms 200] [--features]
-                     [--local shm|cuda]
+                     [--local shm|cuda] [--no-download]
                      [--connect ...] [--listen ...] [--config FILE]   (default: the PC's Zenoh router)
 
 Reads the newest colour frame with its camera_info and, taken with it, the depth frame of its time (the nearest within
@@ -27,6 +27,10 @@ view clears). A frame whose pose (or, with depth, whose depth) does not come is 
 ``<camera>/diagnostics`` (status ``boxer``) once a second. It processes as fast as Boxer runs, always the newest
 frame, in two stages: OWLv2 on the next frame while BoxerNet works on this one (about 20 ms per frame on an RTX PRO
 6000: README, "Speed").
+
+Weights (weights.py): missing checkpoints are downloaded at the start, before the models load; --no-download ends the
+node instead. ``xblick-boxer --download-only`` only downloads and checks them (no camera, no Zenoh, no GPU), for
+preparation scripts. Boxer's source (the submodule) comes from tools/setup.sh.
 """
 
 from __future__ import annotations
@@ -43,6 +47,8 @@ from xblick.camera import check_local
 from xblick.history import PartnerHistory
 from xblick.poses import CameraPoses
 from xblick.session import add_arguments, open_from_args
+
+from . import weights
 
 
 def to_messages(result, header: db.Header) -> tuple[db.Detection2DArray, db.Detection3DArray]:
@@ -103,19 +109,22 @@ def main(argv=None) -> int:
     parser.add_argument("--features", action="store_true",
                         help="publish BoxerNet's DINOv3 features of every frame on <camera>/<node>/dino while somebody "
                              "subscribes (on a frame without 2D boxes DINOv3 then runs for them alone)")
+    weights.add_arguments(parser)  # --download-only (a mode of the command line), --no-download
     add_arguments(parser)  # --connect, --listen, --config; default: the PC's Zenoh router
     # --max-hz: at most 30 colour frames/s by default (0 or none: every frame)
     # --local: auto (the CUDA ring on this GPU, else shared memory), shm or cuda
     node.add_arguments(parser, max_hz=30.0, local=("auto", "shm", "cuda"))
     node.Parameters.add_arguments(parser)  # --param NAME:=VALUE, --params-file, --dump-params, --params-read-only
-    args = parser.parse_args(argv)
+    args = weights.parse_args(parser, argv)  # --download-only: --camera and --labels not required
+    if args.download_only:
+        return weights.download_only(weights.needed())
     mps.check()  # with CUDA_MPS_PIPE_DIRECTORY (MPS meant) its daemon has to run: else stop here
     camera = topics.check_name(args.camera)
     # the options as parameters (the terminal interface shows them): read-only, but LIVE and the labels
     session = open_from_args(args)
     params = node.Parameters(session, args.node, camera)
     params.configure(args)
-    params.declare_options(parser, args, leave_out=("camera", "node"), live={
+    params.declare_options(parser, args, leave_out=("camera", "node", "download_only"), live={
         **LIVE, "labels": {"write": lambda v: None if split_labels(v) else "at least one label"}})
     params.check_overrides()
     labels = split_labels(args.labels)
@@ -123,6 +132,12 @@ def main(argv=None) -> int:
     depth_base = None if args.no_depth else (args.depth or f"{camera}/depth")
 
     node.start("xblick-boxer", max_hz=args.max_hz, local=args.local)
+    try:
+        weights.ensure(weights.needed(), download=not args.no_download)
+    except weights.WeightsError as error:
+        params.close()
+        session.close()
+        return weights.fail(error)
 
     import torch  # noqa: PLC0415 - with the models, after the arguments are checked
 

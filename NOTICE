@@ -9,7 +9,7 @@ Boxer
 
 The node runs Boxer by Meta (https://github.com/facebookresearch/boxer): BoxerNet, its DINOv3 and OWLv2 parts, and
 the checkpoints. Boxer's code and checkpoints are under CC BY-NC 4.0. Boxer's own LICENSE and NOTICE (with the
-licences of the parts Boxer contains) are in third_party/boxer, a git submodule at a fixed commit. tools/setup.sh
+licences of the parts Boxer contains) are in third_party/boxer, a git submodule at a fixed commit. The node
 downloads the checkpoints from Hugging Face (facebook/boxer). This repository contains no copy of Boxer's code or
 checkpoints.
 

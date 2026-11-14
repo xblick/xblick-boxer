@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.2 (2026-11-14)
+
+- The node downloads missing checkpoints at its start, before the models load. It prints Boxer's terms, the files
+  and their size first. With all checkpoints there it uses no network and writes no file.
+- `--download-only` downloads and checks the checkpoints, then exits 0. It needs no camera, Zenoh router or GPU, and
+  `--camera` and `--labels` may be left out. `tools/setup.sh` calls it after the submodule and `uv sync`, and no
+  longer needs curl.
+- `--no-download` ends a start at once when a checkpoint is missing and names it. It is a read-only parameter.
+- `weights.py` is the one list of the checkpoints (names, SHA-256 and the terms moved from `tools/setup.sh`, the
+  terms unchanged). `tools/setup.sh` now prints them only when a checkpoint is downloaded, after it has fetched
+  Boxer's source.
+- Without Boxer's source (the submodule) the node downloads nothing and names `tools/setup.sh`.
+- A download goes to `<name>.part` under the lock `ckpts/.download.lock` and gets its final name after the SHA-256
+  check.
+
 ## 0.2.1 (2026-11-14)
 
 `tools/setup.sh` prints Boxer's terms (CC BY-NC 4.0) before it downloads Boxer's code and checkpoints.

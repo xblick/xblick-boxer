@@ -39,8 +39,8 @@ effect on the frame rate.
 **The node never processes a frame without its parts.** It skips and counts a frame whose pose does not arrive
 within `--pose-wait-ms`. It does the same for a frame whose depth is not within `--max-offset-ms`.
 
-**The node fails at start when something is missing.** A missing submodule or a missing checkpoint stops the node
-with a message that states what to do. `--local cuda` with a camera on the same host that has no CUDA ring is an
+**The node fails at start when something is missing.** A missing submodule stops the node with a message that
+states what to do. A missing checkpoint is downloaded ("Weights" below), or with `--no-download` it stops the node. `--local cuda` with a camera on the same host that has no CUDA ring is an
 error.
 
 **Boxer's code stays unchanged.** Boxer is no Python package. `boxer.py` puts `third_party/boxer` on `sys.path`
@@ -56,7 +56,34 @@ the node's own functions. The resize is bilinear as OpenCV's, without the roundi
 their own rate. The node interpolates the pose at the stamp of the image with Durchblick's `poses.CameraPoses`.
 
 **The licence stays separate.** Boxer's code and checkpoints are CC-BY-NC 4.0. Boxer is a git submodule at a fixed
-commit, and `tools/setup.sh` downloads the checkpoints. This repository contains no copy of either.
+commit, and the node downloads the checkpoints. This repository contains no copy of either.
+
+## Weights
+
+`weights.py` lists Boxer's three checkpoints: the Hugging Face repository `facebook/boxer`, each file's SHA-256 and
+size. They go into `third_party/boxer/ckpts`, where Boxer's code reads them. The node and `tools/setup.sh` use this
+one list.
+
+At its start, before it loads the models, the node checks that every checkpoint exists. When all exist, the node
+opens no network connection and writes no file, so it starts offline. When one is missing, the node first checks
+that Boxer's source is there, because the checkpoints go into the submodule. Without it, the node ends and names
+`tools/setup.sh`. It never clones the submodule. Then the node takes the lock `ckpts/.download.lock`. It prints
+Boxer's terms, the files and their size, and it downloads each file. The node writes a file as `<name>.part` and
+renames it after the check. A file therefore has its final name only when it is complete. A second node that starts
+at the same time waits for the lock. It then finds the files and does not download them again.
+
+The check compares the SHA-256 of each download with the one in `weights.py`. A wrong SHA-256 keeps the download as
+`<name>.part`, and the error names it. Remove it, then start again. The progress is a line that updates in place on
+a terminal. In a log file it is one line per tenth of the file.
+
+A failure ends the node with one line that says what to do. Ctrl-C or SIGTERM during a download end the node at
+once with the exit code 130 or 143. The node then removes the `.part` file.
+
+`--download-only` downloads and checks the checkpoints, then ends. It also checks the SHA-256 of checkpoints that
+exist. It needs no camera, no Zenoh router and no GPU. `weights.parse_args` lifts the requirement of `--camera` and
+`--labels` when the command line contains `--download-only`. `--no-download` ends the node when a checkpoint is
+missing and names it. It is a read-only parameter like every other start option. `--download-only` is a mode of
+the command line and has no parameter.
 
 ## Tests
 
@@ -69,6 +96,7 @@ Always name `tests`. Plain `pytest` also collects `third_party/boxer` and fails.
 | File | Needs | What it checks |
 | --- | --- | --- |
 | `tests/test_node.py` | no GPU | The conversions: quaternions, `vision_msgs`, depth. |
+| `tests/test_weights.py` | no GPU, a local HTTP server | The list of checkpoints, no network use when they exist, a download through the Hugging Face path with its redirect, the SHA-256, a wrong checksum, a missing submodule, Ctrl-C and SIGTERM, two processes at once, the progress in a log file, `--download-only` and `--no-download`. |
 | `tests/test_boxer.py` | a GPU and the checkpoints | The semi-dense points from the GPU against Boxer's own, on a synthetic depth image. Two tests need the simulation frame `tests/data/sim_ycb*.png`, which this repository does not contain. They skip. |
 
 ## What we measured on the simulation
