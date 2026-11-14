@@ -11,12 +11,13 @@ import pytest
 import torch
 from PIL import Image
 
-from xblick_boxer.boxer import BOXER_ROOT, CHECKPOINT
+from xblick_boxer.boxer import CHECKPOINT
+from xblick_boxer.weights import STORE
 
 DATA = Path(__file__).parent / "data"
 pytestmark = [
     pytest.mark.skipif(not torch.cuda.is_available(), reason="no CUDA device"),
-    pytest.mark.skipif(not (BOXER_ROOT / "ckpts" / CHECKPOINT).exists(), reason="no Boxer checkpoints (README)"),
+    pytest.mark.skipif(not (STORE.root / CHECKPOINT).exists(), reason="no Boxer checkpoints in the cache (README)"),
 ]
 needs_frame = pytest.mark.skipif(not (DATA / "sim_ycb.png").exists(),
                                  reason="tests/data/sim_ycb*.png is not in this repository")

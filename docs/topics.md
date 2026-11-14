@@ -76,6 +76,7 @@ counts the skipped frames by cause: no pose, no depth, no `camera_info`.
 | `--device` | `cuda` | The GPU of the node. |
 | `--no-download` | off | End at once when a checkpoint is missing, and name it. The node downloads nothing. |
 | `--download-only` | off | Download the missing checkpoints, check their SHA-256 and end. The node needs no camera, Zenoh router or GPU for it, and `--camera` and `--labels` may be left out. |
+| `--weights-dir DIR` | the cache directory | The directory of the weights, in place of the node's cache directory `~/.cache/xblick/boxer/`. A start option, read-only as a parameter. |
 | `--dino-beside-owl` | off | Compute the DINOv3 features beside OWLv2 on a CUDA stream of their own. It did not help in our measurements. |
 | `--features` | off | Publish the DINOv3 features. |
 | `--max-hz` | 30 | The highest number of colour frames per second. `0` or `none` takes every frame. |

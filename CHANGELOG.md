@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.4 (2026-11-14)
+
+- The weights moved out of the checkout into the node's cache directory, `~/.cache/xblick/boxer/`. `XBLICK_HOME` and
+  `XDG_CACHE_HOME` move it, and `--weights-dir DIR` names another directory. Weights at the former place, the
+  checkout's `third_party/boxer/ckpts/`, are not used. The node prints the command that moves them. In the checkout it is
+  `mkdir -p ~/.cache/xblick && mv third_party/boxer/ckpts ~/.cache/xblick/boxer`.
+- `--weights-dir DIR` is a new start option and a read-only parameter.
+- The message about a missing file names the full download command.
+- The node needs `xblick>=0.5.5,<0.6`.
+- Boxer's own code reads OWLv2 and DINOv3 from module globals that name its `ckpts/`. The node sets them to its
+  cache directory after importing Boxer (`boxer.use_checkpoints`), without a change of Boxer's files. OWLv2's
+  text-embedding caches now go there too. A test on a GPU confirmed that Boxer reads all three checkpoints from the
+  cache directory and never creates `ckpts/`.
+- `Boxer` takes the weights' directory (`weights=`, default `weights.STORE.root`).
+
 ## 0.2.3 (2026-11-14)
 
 - The download of the weights is the core's `xblick.weights` (xblick 0.5.3). The node's own copy of that code is

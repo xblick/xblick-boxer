@@ -28,9 +28,10 @@ view clears). A frame whose pose (or, with depth, whose depth) does not come is 
 frame, in two stages: OWLv2 on the next frame while BoxerNet works on this one (about 20 ms per frame on an RTX PRO
 6000: README, "Speed").
 
-Weights (weights.py): missing checkpoints are downloaded at the start, before the models load; --no-download ends the
-node instead. ``xblick-boxer --download-only`` only downloads and checks them (no camera, no Zenoh, no GPU), for
-preparation scripts. Boxer's source (the submodule) comes from tools/setup.sh.
+Weights (weights.py; in the node's cache directory ~/.cache/xblick/boxer, or --weights-dir): missing checkpoints are
+downloaded at the start, before the models load; --no-download ends the node instead. ``xblick-boxer --download-only``
+only downloads and checks them (no camera, no Zenoh, no GPU), for preparation scripts. Boxer's source (the submodule)
+comes from tools/setup.sh.
 """
 
 from __future__ import annotations
@@ -118,7 +119,8 @@ def main(argv=None) -> int:
     node.Parameters.add_arguments(parser)  # --param NAME:=VALUE, --params-file, --dump-params, --params-read-only
     args = xblick_weights.parse_args(parser, argv)  # --download-only: --camera and --labels not required
     if args.download_only:
-        return weights.STORE.download_only(weights.needed())
+        return weights.store_for(parser, args).download_only(
+            weights.needed(), options=weights.options(args))
     mps.check()  # with CUDA_MPS_PIPE_DIRECTORY (MPS meant) its daemon has to run: else stop here
     camera = topics.check_name(args.camera)
     # the options as parameters (the terminal interface shows them): read-only, but LIVE and the labels
@@ -133,18 +135,21 @@ def main(argv=None) -> int:
     depth_base = None if args.no_depth else (args.depth or f"{camera}/depth")
 
     node.start("xblick-boxer", max_hz=args.max_hz, local=args.local)
+    store = weights.store_for(parser, args)  # --weights-dir, also given as a parameter
     try:
-        weights.STORE.ensure(weights.needed(), download=not args.no_download)
+        store.ensure(weights.needed(), download=not args.no_download,
+                     options=weights.options(args))
     except xblick_weights.WeightsError as error:
         params.close()
         session.close()
-        return weights.STORE.fail(error)
+        return store.fail(error)
 
     import torch  # noqa: PLC0415 - with the models, after the arguments are checked
 
     from .boxer import Boxer  # loads torch and the models: after the arguments are checked
 
-    boxer = Boxer(labels, args.thresh2d, args.thresh3d, args.device, dino_beside_owl=args.dino_beside_owl)
+    boxer = Boxer(labels, args.thresh2d, args.thresh3d, args.device, dino_beside_owl=args.dino_beside_owl,
+                  weights=store.root)
     features_pub = None  # with the first frame's camera_info (--features)
     world = CameraPoses(session, camera)
     color = db.ImageSubscriber(session, color_base, transport="auto", camera_info=True, local=args.local,

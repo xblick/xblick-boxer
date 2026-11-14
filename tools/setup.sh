@@ -1,7 +1,7 @@
 #!/bin/bash
 # Sets xblick-boxer up from scratch or updates it: Boxer's source (the submodule), the venv exactly as uv.lock fixes
 # it (.venv), then Boxer's checkpoints through xblick-boxer --download-only (weights.py; 1.2 GB, CC-BY-NC, from
-# Hugging Face; only those missing, each checked against its SHA-256) in third_party/boxer/ckpts. The node downloads
+# Hugging Face; only those missing, each checked against its SHA-256) in ~/.cache/xblick/boxer. The node downloads
 # missing checkpoints at its start too:
 #
 #     tools/setup.sh

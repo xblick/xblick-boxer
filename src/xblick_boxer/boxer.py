@@ -12,11 +12,12 @@ from __future__ import annotations
 import contextlib
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 import torch
 
-from .weights import BOXER_ROOT, CHECKPOINT, CHECKPOINTS  # the checkpoints' one list (weights.py)
+from .weights import BOXER_ROOT, CHECKPOINT, CHECKPOINTS, OWL, STORE  # the checkpoints' one list (weights.py)
 
 
 def depth_k(k, size, depth_shape) -> tuple[float, float, float, float]:
@@ -56,17 +57,33 @@ def sdp_from_depth(depth_m: torch.Tensor, fx: float, fy: float, cx: float, cy: f
     return points_w
 
 
-def _import_boxer():
-    """Boxer's modules (it is no package: its root goes on sys.path); fails with what to do."""
+def _import_boxer(root: Path | None = None):
+    """Boxer's modules (it is no package: its root goes on sys.path), reading its checkpoints from ``root`` (the
+    store's, default the node's cache directory: ``use_checkpoints``); fails with what to do."""
+    root = STORE.root if root is None else Path(root)
     if not (BOXER_ROOT / "boxernet" / "boxernet.py").exists():
         raise SystemExit(f"Boxer's source is missing at {BOXER_ROOT}: run tools/setup.sh (git submodule update "
                          "--init)")
-    missing = [name for name in CHECKPOINTS if not (BOXER_ROOT / "ckpts" / name).exists()]
+    missing = [name for name in CHECKPOINTS if not (root / name).exists()]
     if missing:
-        raise SystemExit(f"Boxer's checkpoints are missing in {BOXER_ROOT / 'ckpts'}: {', '.join(missing)} "
+        raise SystemExit(f"Boxer's checkpoints are missing in {root}: {', '.join(missing)} "
                          "(xblick-boxer --download-only downloads them)")
     if str(BOXER_ROOT) not in sys.path:
         sys.path.insert(0, str(BOXER_ROOT))
+    use_checkpoints(root)
+
+
+def use_checkpoints(root: Path):
+    """Boxer's own code reads OWLv2 and DINOv3 from module globals that name its ``ckpts/`` (and writes OWLv2's
+    text-embedding caches beside OWLv2's file): they are set to ``root``, the node's weights, without a change of
+    Boxer's files. They are read when a model is built, not at import. BoxerNet's file is passed explicitly."""
+    import boxernet.dinov3_wrapper  # noqa: PLC0415 - Boxer's root is on sys.path now
+    import owl.clip_tokenizer  # noqa: PLC0415
+    import owl.owl_wrapper  # noqa: PLC0415
+
+    owl.owl_wrapper._CKPT_PATH = str(root / OWL)  # OwlWrapper: the model, and its text-embedding caches beside it
+    owl.clip_tokenizer._CKPT_PATH = str(root / OWL)  # TextEmbedder (Boxer's tracking tools; the node does not use it)
+    boxernet.dinov3_wrapper.CKPT_PATH = str(root)  # DINOv3's directory
 
 
 @dataclass
@@ -111,10 +128,11 @@ class Boxer:
     """OWLv2 and BoxerNet, loaded once (on the GPU: about 2 GB)."""
 
     def __init__(self, labels: list[str], thresh2d: float = 0.2, thresh3d: float = 0.5, device: str = "cuda",
-                 dino_beside_owl: bool = False, features: bool = False):
+                 dino_beside_owl: bool = False, features: bool = False, weights: Path | None = None):
         if not labels:
             raise ValueError("Boxer needs at least one text prompt")
-        _import_boxer()
+        weights = STORE.root if weights is None else Path(weights)  # the checkpoints (the node: its --weights-dir's)
+        _import_boxer(weights)
         from boxernet.boxernet import BoxerNet
         from owl.owl_wrapper import OwlWrapper
 
@@ -126,7 +144,7 @@ class Boxer:
         # 6000), the same boxes on the test frame
         self.owl = OwlWrapper(device, text_prompts=self.labels, min_confidence=thresh2d,
                               precision="bfloat16" if self.dtype == torch.bfloat16 else "float32")
-        self.net = BoxerNet.load_from_checkpoint(str(BOXER_ROOT / "ckpts" / CHECKPOINT), device=device)
+        self.net = BoxerNet.load_from_checkpoint(str(weights / CHECKPOINT), device=device)
         self.hw = int(self.net.hw)
         if self.dtype == torch.bfloat16:
             # the weights of its Linear and Conv2d layers in bfloat16 once, instead of autocast casting the float32 ones

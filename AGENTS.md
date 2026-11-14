@@ -12,7 +12,7 @@ traps (Zenoh sessions and routers, CUDA rings, hanging tests): AGENTS.md of the 
 ```bash
 tools/setup.sh                            # submodule, .venv from uv.lock, then xblick-boxer --download-only
 .venv/bin/python -m pytest tests/test_weights.py -q   # CPU, 4 s: the node's files and its start up to the weights (the download: the core's tests)
-.venv/bin/xblick-boxer --download-only    # checkpoints (1.2 GB) into third_party/boxer/ckpts if missing, SHA-256
+.venv/bin/xblick-boxer --download-only    # checkpoints (1.2 GB) into ~/.cache/xblick/boxer if missing, SHA-256
 .venv/bin/python -m pytest tests -q       # always name tests/: plain pytest collects third_party/boxer and fails
 .venv/bin/ruff check src tests            # lint: 120 columns, third_party excluded (pyproject [tool.ruff])
 .venv/bin/xblick-boxer --camera cam/azurekinect --depth cam/azurekinect/depth_to_color \
@@ -31,6 +31,11 @@ xblick rerun --spawn                       # viewer
 
 ## Rules
 
+- Files: the weights are in the node's cache directory (`xblick.paths.cache_dir("boxer")`, `~/.cache/xblick/boxer`), never in
+  the checkout. `weights.STORE = Store(PROG, node=NODE, ..., former=[FORMER])`, `Weight` paths relative to its root;
+  `store = weights.store_for(parser, args)` (`--weights-dir`) for `download_only`, `ensure` and `fail`, with
+  `options=weights.options(args)`; model code takes its paths from `store.root`. `FORMER` (the checkout's `third_party/boxer/ckpts/`) is never
+  read: the store prints the command that moves it. The core's `docs/reference/files.md` has the rule. Boxer's own checkpoint globals: `boxer.use_checkpoints`.
 - Fail fast, never process a frame without its parts. Skip and count a frame whose pose (`--pose-wait-ms`) or depth
   (`--max-offset-ms`) does not come. `--local cuda` with a same-host camera without a CUDA ring is an error. A missing
   submodule stops the node with what to do (`tools/setup.sh`); never clone it at run time.
@@ -42,9 +47,9 @@ xblick rerun --spawn                       # viewer
 - A frame without boxes publishes empty arrays, so viewers clear their boxes.
 - Weights: `weights.py` is the one list (`CHECKPOINTS`: SHA-256, size; `REVISION`: the commit of `facebook/boxer` that main was on 2026-11-14;
   `boxer.py` imports it). `weights.STORE.ensure` runs at the start before the models load; `--download-only` runs it alone.
-  All there: no network, no file written (`test_weights.py` checks it). `REQUIRED`: the submodule first, the
-  checkpoints go into it. Downloads: `<name>.part` in `ckpts/`, renamed after the SHA-256 check, under the lock
-  `ckpts/.download.lock`. Never let a partial or unchecked file get its final name. No fallbacks.
+  All there: no network, no file written (`test_weights.py` checks it). `REQUIRED`: the submodule first (code).
+  Downloads: `<name>.part` in `~/.cache/xblick/boxer/`, renamed after the SHA-256 check, under the lock
+  `~/.cache/xblick/boxer/.download.lock`. Never let a partial or unchecked file get its final name. No fallbacks.
 - Licence: Boxer's code (submodule at a fixed commit) and checkpoints are CC-BY-NC 4.0. Copy nothing of them into
   this repository.
 - README.md and docs/ are the documentation of record. Speed numbers with GPU, date and load. Keep options and
@@ -60,9 +65,10 @@ xblick rerun --spawn                       # viewer
 - **Two threads, one CUDA stream each** (`Boxer.detect`, `Boxer.lift`): OWLv2 of the next frame while BoxerNet lifts
   this one. Same time per frame, more frames per second on a busy GPU.
 - **Shared GPUs distort timings.** Compare variants interleaved in one process. Report the fastest frames too.
-- **Checkpoints directory.** Symptom: untracked content in the submodule. Cause: Boxer's `.gitignore` ignores
-  `ckpts/` only as a directory, a symlink named `ckpts` is not ignored. Fix: `third_party/boxer/ckpts` must be a real
-  directory.
+- **Boxer's checkpoint paths.** Boxer's code names its `ckpts/` in module globals (`owl.owl_wrapper._CKPT_PATH`,
+  `owl.clip_tokenizer._CKPT_PATH`, `boxernet.dinov3_wrapper.CKPT_PATH`), read when a model is built. Fix:
+  `boxer.use_checkpoints(root)` sets them after the import (`_import_boxer`). Never patch Boxer's files. A new Boxer
+  commit: check that no other global names `ckpts/` (`test_weights.py` checks the three).
 - **`--download-only` and required options.** `xblick.weights.parse_args` lifts `required` of `--camera` and `--labels`
   when the token `--download-only` is spelled out. `download_only` is in `leave_out` of `declare_options`;
   `no_download` is a read-only parameter.
@@ -83,7 +89,8 @@ xblick rerun --spawn                       # viewer
 | `src/xblick_boxer/weights.py` | `CHECKPOINTS`, `TERMS`, `needed`, `STORE` (the core's `xblick.weights.Store`: the download, `--download-only`/`--no-download`) |
 | `src/xblick_boxer/boxer.py` | Boxer on one image: OWLv2, BoxerNet, `sdp_from_depth`, Boxer's imports |
 | `tests/` | node and GPU tests |
-| `third_party/boxer` (submodule), its `ckpts/` | Boxer's code at a fixed commit, the checkpoints the node downloads, `.download.lock` |
+| `third_party/boxer` (submodule) | Boxer's code at a fixed commit. Its `ckpts/` is the checkpoints' former place. |
+| `~/.cache/xblick/boxer/` | the checkpoints the node downloads, OWLv2's text-embedding caches, `.download.lock` |
 | `tools/setup.sh` | submodule, venv, then `xblick-boxer --download-only` |
 | `docs/` | topics, performance, design |
 
@@ -98,4 +105,4 @@ xblick rerun --spawn                       # viewer
 | `--thresh2d` / `--thresh3d` | 0.2 / 0.5 |
 | `--max-offset-ms` / `--pose-wait-ms` | half the depth's frame period / 200 |
 | `--max-hz` / `--local` / `--device` | 30 / `auto` / `cuda` |
-| Environment | `UV` (setup), `CUDA_MPS_PIPE_DIRECTORY` (MPS expected) |
+| Environment | `UV` (setup), `CUDA_MPS_PIPE_DIRECTORY` (MPS expected), `XBLICK_HOME`, `XDG_CACHE_HOME` (cache directory) |

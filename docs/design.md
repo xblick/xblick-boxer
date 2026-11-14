@@ -62,13 +62,20 @@ commit, and the node downloads the checkpoints. This repository contains no copy
 
 `weights.py` lists Boxer's three checkpoints: the Hugging Face repository `facebook/boxer` at a fixed commit, each
 file's SHA-256 and size. The commit is the one that `main` pointed at on 2026-11-14. Hugging Face states for the files
-there the SHA-256 values that the code checks. They go into `third_party/boxer/ckpts`, where Boxer's code reads them. The node and `tools/setup.sh` use this
-one list.
+there the SHA-256 values that the code checks. They go into the node's cache directory, `~/.cache/xblick/boxer/`
+(`XBLICK_HOME`, `XDG_CACHE_HOME`, `--weights-dir`). The node and `tools/setup.sh` use this one list. The download
+itself is the core's `xblick.weights`.
+
+Boxer's own code reads OWLv2 and DINOv3 from its `ckpts/`, named in module globals. `boxer.use_checkpoints` sets
+these globals to the cache directory right after the node imports Boxer, without a change of Boxer's files. BoxerNet's
+file is passed explicitly. OWLv2's text-embedding caches then go to the cache directory as well. A test on a GPU
+confirmed that Boxer read all three checkpoints there and never created `ckpts/`. The submodule's `ckpts/` is the
+checkpoints' former place: the node does not read them there, and it prints the command that moves them.
 
 At its start, before it loads the models, the node checks that every checkpoint exists. When all exist, the node
 opens no network connection and writes no file, so it starts offline. When one is missing, the node first checks
-that Boxer's source is there, because the checkpoints go into the submodule. Without it, the node ends and names
-`tools/setup.sh`. It never clones the submodule. Then the node takes the lock `ckpts/.download.lock`. It prints
+that Boxer's source is there, because the node needs its code. Without it, the node ends and names
+`tools/setup.sh`. It never clones the submodule. Then the node takes the lock `~/.cache/xblick/boxer/.download.lock`. It prints
 Boxer's terms, the files and their size, and it downloads each file. The node writes a file as `<name>.part` and
 renames it after the check. A file therefore has its final name only when it is complete. A second node that starts
 at the same time waits for the lock. It then finds the files and does not download them again.
