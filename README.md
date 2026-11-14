@@ -1,6 +1,10 @@
 # xblick-boxer
 
 [![xblick core](https://img.shields.io/pypi/v/xblick?label=xblick%20core&color=blue)](https://github.com/xblick/xblick)
+[![tests](https://github.com/xblick/xblick-boxer/actions/workflows/tests.yml/badge.svg)](https://github.com/xblick/xblick-boxer/actions/workflows/tests.yml)
+[![licence](https://img.shields.io/badge/licence-CC%20BY--NC%204.0-blue)](LICENSE)
+[![device](https://img.shields.io/badge/needs-NVIDIA%20GPU-76b900)](README.md)
+[![model](https://img.shields.io/badge/model-non--commercial%20use%20only-orange)](NOTICE)
 
 xblick-boxer finds the objects that a camera sees and publishes an oriented 3D box for each of them. It runs
 Meta's [Boxer](https://huggingface.co/facebook/boxer) on the camera's colour, depth and pose streams and keeps up
