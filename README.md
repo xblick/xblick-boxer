@@ -42,14 +42,8 @@ The script does three things. It fetches Boxer's source as a git submodule. It d
 (1.2 GB) from Hugging Face and checks their SHA-256. It creates `.venv` exactly as `uv.lock` fixes it, with
 PyTorch for CUDA 13. A second call does only what changed.
 
-Before it downloads Boxer, the script names Boxer's terms (CC BY-NC 4.0: no commercial use, credit to its authors)
-and asks whether to go on. A script without a terminal accepts them with a flag or a variable. Without either it
-ends with an error and downloads nothing:
-
-```bash
-tools/setup.sh --accept-model-terms
-XBLICK_BOXER_ACCEPT_MODEL_TERMS=yes tools/setup.sh
-```
+Before it downloads Boxer, the script prints Boxer's terms (CC BY-NC 4.0: no commercial use, credit to its
+authors).
 
 ## Run
 

@@ -3,10 +3,9 @@
 # CC-BY-NC, from Hugging Face; only those missing, each checked against its SHA-256), the venv exactly as uv.lock
 # fixes it (.venv):
 #
-#     tools/setup.sh [--accept-model-terms]
+#     tools/setup.sh
 #
-# Before it downloads the model it names its terms and asks. A script without a terminal passes
-# --accept-model-terms (or sets XBLICK_BOXER_ACCEPT_MODEL_TERMS=yes); without either it ends with an error.
+# Before it downloads a model it prints the model's terms: whoever runs the script is the one who uses the model.
 #
 # Needs uv (UV names it, default uv on PATH), curl and git. Run again, it does only what changed.
 set -euo pipefail
@@ -15,18 +14,8 @@ UV=${UV:-uv}
 command -v "$UV" > /dev/null || { echo "no uv: $UV" >&2; exit 1; }
 cd "$ROOT"
 
-ACCEPT=${XBLICK_BOXER_ACCEPT_MODEL_TERMS:-}
-[[ -z "$ACCEPT" || "$ACCEPT" == yes ]] || { echo "XBLICK_BOXER_ACCEPT_MODEL_TERMS=$ACCEPT: yes, or not set" >&2; exit 1; }
-for argument in "$@"; do
-    case "$argument" in
-        --accept-model-terms) ACCEPT=yes ;;
-        *) echo "$argument: unknown argument (tools/setup.sh [--accept-model-terms])" >&2; exit 1 ;;
-    esac
-done
-
-# The terms of what is downloaded, and the user's yes to them: asked on a terminal, given by --accept-model-terms or
-# XBLICK_BOXER_ACCEPT_MODEL_TERMS=yes, else an error. $1: what is missing.
-accept_model_terms() {
+# The terms of what is downloaded, printed before the download. $1: what is missing.
+model_terms() {
     cat <<TERMS
 xblick-boxer: to download: $1
 Boxer is the work of Meta, under its terms, and you are the one who uses it:
@@ -34,24 +23,13 @@ Boxer is the work of Meta, under its terms, and you are the one who uses it:
     the Creative Commons Attribution-NonCommercial 4.0 International licence (CC BY-NC 4.0).
     You may not use them for commercial purposes, and you must give credit to Boxer's authors.
 TERMS
-    if [[ "$ACCEPT" == yes ]]; then
-        echo "xblick-boxer: terms accepted (--accept-model-terms or XBLICK_BOXER_ACCEPT_MODEL_TERMS=yes)"
-    elif [[ -t 0 && -t 1 ]]; then
-        read -r -p "Download under these terms? [y/N] " answer
-        [[ "$answer" == y || "$answer" == Y || "$answer" == yes ]] || {
-            echo "xblick-boxer: nothing downloaded" >&2; exit 1; }
-    else
-        echo "xblick-boxer: no terminal to ask on: pass --accept-model-terms or set" \
-             "XBLICK_BOXER_ACCEPT_MODEL_TERMS=yes once you accept these terms; nothing downloaded" >&2
-        exit 1
-    fi
 }
 
 CKPTS=$ROOT/third_party/boxer/ckpts
 NAMES="boxernet_hw960in2x6d768-c88128f8.ckpt dinov3_vits16plus_pretrain_lvd1689m-4057cbaa.pth owlv2-base-patch16-ensemble.pt"
 missing=""
 for name in $NAMES; do [ -e "$CKPTS/$name" ] || missing="$missing $name"; done
-[ -z "$missing" ] || accept_model_terms "Boxer's code and its checkpoints$missing"
+[ -z "$missing" ] || model_terms "Boxer's code and its checkpoints$missing"
 git submodule update --init third_party/boxer
 mkdir -p "$CKPTS"
 while read -r name sha256; do
