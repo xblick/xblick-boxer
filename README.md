@@ -1,5 +1,7 @@
 # xblick-boxer
 
+[![xblick core](https://img.shields.io/pypi/v/xblick?label=xblick%20core&color=blue)](https://github.com/xblick/xblick)
+
 xblick-boxer finds the objects that a camera sees and publishes an oriented 3D box for each of them. It runs
 Meta's [Boxer](https://huggingface.co/facebook/boxer) on the camera's colour, depth and pose streams and keeps up
 with a 30 Hz camera.
@@ -47,11 +49,11 @@ authors).
 
 ## Run
 
-Start the node on a camera. `robot/camera` is an example name. The node connects to the Zenoh router of the
+Start the node on a camera. `test/camera` is an example name. The node connects to the Zenoh router of the
 PC (`zenohd` on port 7447), which [Sessions](https://github.com/xblick/xblick/blob/main/docs/concepts/sessions.md) explains.
 
 ```bash
-.venv/bin/xblick-boxer --camera robot/camera --depth robot/camera/depth_to_color \
+.venv/bin/xblick-boxer --camera test/camera --depth test/camera/depth_to_color \
   --labels "cracker box,sugar box,tomato soup can,mustard bottle"
 ```
 
@@ -78,7 +80,7 @@ The options that most users change:
 
 All options: [docs/topics.md](docs/topics.md#options).
 
-Every option is also a parameter of the node `<camera>/<node>`, for example `robot/camera/boxer`. Durchblick's
+Every option is also a parameter of the node `<camera>/<node>`, for example `test/camera/boxer`. Durchblick's
 terminal interface (`xblick`, tab Parameters) and `xblick param` show them. `labels`, `thresh2d`, `thresh3d` and
 `pose_wait_ms` change while the node runs: new labels are OWLv2's prompts from the next frame on. The other options
 apply at the next start, where `--param NAME:=VALUE` or `--params-file FILE` set them.

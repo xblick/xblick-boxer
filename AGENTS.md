@@ -13,7 +13,7 @@ traps (Zenoh sessions and routers, CUDA rings, hanging tests): AGENTS.md of the 
 tools/setup.sh                            # submodule, checkpoints (1.2 GB, SHA-256 checked), .venv from uv.lock
 .venv/bin/python -m pytest tests -q       # always name tests/: plain pytest collects third_party/boxer and fails
 .venv/bin/ruff check src tests            # lint: 120 columns, third_party excluded (pyproject [tool.ruff])
-.venv/bin/xblick-boxer --camera robot/camera --depth robot/camera/depth_to_color \
+.venv/bin/xblick-boxer --camera test/camera --depth test/camera/depth_to_color \
   --labels "cracker box,sugar box" [--features]      # needs zenohd on the PC (7447)
 xblick rerun --spawn                       # viewer
 ```

@@ -63,7 +63,7 @@ counts the skipped frames by cause: no pose, no depth, no `camera_info`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
-| `--camera` | required | The base name of the camera, for example `robot/camera`. |
+| `--camera` | required | The base name of the camera, for example `test/camera`. |
 | `--labels` | required | The text prompts, separated by spaces or commas, for example `box can "tomato soup can"`. Live: it changes while the node runs. |
 | `--color` | `<camera>/color` | The colour stream. |
 | `--depth` | `<camera>/depth` | The depth stream in the geometry of the colour camera. |
@@ -94,7 +94,7 @@ every report state which transport each stream uses.
 
 ## Parameters
 
-Every option is also a parameter of the node `<camera>/<node>`, for example `robot/camera/boxer`. The live ones
+Every option is also a parameter of the node `<camera>/<node>`, for example `test/camera/boxer`. The live ones
 change while the node runs: `labels`, `thresh2d`, `thresh3d`, `pose_wait_ms`; the tables mark them. The others are
 read-only and apply at the next start, where `--param NAME:=VALUE` or `--params-file FILE` set them. New labels are
 OWLv2's prompts from the next frame on. Durchblick's terminal interface (`xblick`, tab Parameters) and `xblick
