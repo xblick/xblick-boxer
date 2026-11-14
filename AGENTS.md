@@ -40,7 +40,7 @@ xblick rerun --spawn                       # viewer
 - Nothing between frame and model on the CPU: resize (bilinear as OpenCV's, without rounding to uint8) and
   semi-dense points (`sdp_from_depth`) on the GPU.
 - A frame without boxes publishes empty arrays, so viewers clear their boxes.
-- Weights: `weights.py` is the one list (`CHECKPOINTS`: SHA-256, size; `REVISION` main of `facebook/boxer`;
+- Weights: `weights.py` is the one list (`CHECKPOINTS`: SHA-256, size; `REVISION`: the commit of `facebook/boxer` that main was on 2026-11-14;
   `boxer.py` imports it). `weights.ensure` runs at the start before the models load; `--download-only` runs it alone.
   All there: no network, no file written (`test_weights.py` checks it). `REQUIRED`: the submodule first, the
   checkpoints go into it. Downloads: `<name>.part` in `ckpts/`, renamed after the SHA-256 check, under the lock

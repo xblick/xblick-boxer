@@ -14,6 +14,9 @@
 - Without Boxer's source (the submodule) the node downloads nothing and names `tools/setup.sh`.
 - A download goes to `<name>.part` under the lock `ckpts/.download.lock` and gets its final name after the SHA-256
   check.
+- The download takes the checkpoints from a fixed commit of `facebook/boxer` (bfba912, where `main` was on
+  2026-11-14), no longer from `main`. Hugging Face states the same SHA-256 values for the files there. A download is
+  also checked against the exact size.
 
 ## 0.2.1 (2026-11-14)
 

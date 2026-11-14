@@ -60,8 +60,9 @@ commit, and the node downloads the checkpoints. This repository contains no copy
 
 ## Weights
 
-`weights.py` lists Boxer's three checkpoints: the Hugging Face repository `facebook/boxer`, each file's SHA-256 and
-size. They go into `third_party/boxer/ckpts`, where Boxer's code reads them. The node and `tools/setup.sh` use this
+`weights.py` lists Boxer's three checkpoints: the Hugging Face repository `facebook/boxer` at a fixed commit, each
+file's SHA-256 and size. The commit is the one that `main` pointed at on 2026-11-14. Hugging Face states for the files
+there the SHA-256 values that the code checks. They go into `third_party/boxer/ckpts`, where Boxer's code reads them. The node and `tools/setup.sh` use this
 one list.
 
 At its start, before it loads the models, the node checks that every checkpoint exists. When all exist, the node
@@ -72,7 +73,7 @@ Boxer's terms, the files and their size, and it downloads each file. The node wr
 renames it after the check. A file therefore has its final name only when it is complete. A second node that starts
 at the same time waits for the lock. It then finds the files and does not download them again.
 
-The check compares the SHA-256 of each download with the one in `weights.py`. A wrong SHA-256 keeps the download as
+The check compares the size and the SHA-256 of each download with those in `weights.py`. A wrong SHA-256 keeps the download as
 `<name>.part`, and the error names it. Remove it, then start again. The progress is a line that updates in place on
 a terminal. In a log file it is one line per tenth of the file.
 
