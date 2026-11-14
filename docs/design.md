@@ -81,7 +81,7 @@ A failure ends the node with one line that says what to do. Ctrl-C or SIGTERM du
 once with the exit code 130 or 143. The node then removes the `.part` file.
 
 `--download-only` downloads and checks the checkpoints, then ends. It also checks the SHA-256 of checkpoints that
-exist. It needs no camera, no Zenoh router and no GPU. `weights.parse_args` lifts the requirement of `--camera` and
+exist. It needs no camera, no Zenoh router and no GPU. `xblick.weights.parse_args` lifts the requirement of `--camera` and
 `--labels` when the command line contains `--download-only`. `--no-download` ends the node when a checkpoint is
 missing and names it. It is a read-only parameter like every other start option. `--download-only` is a mode of
 the command line and has no parameter.
@@ -97,7 +97,7 @@ Always name `tests`. Plain `pytest` also collects `third_party/boxer` and fails.
 | File | Needs | What it checks |
 | --- | --- | --- |
 | `tests/test_node.py` | no GPU | The conversions: quaternions, `vision_msgs`, depth. |
-| `tests/test_weights.py` | no GPU, a local HTTP server | The list of checkpoints, no network use when they exist, a download through the Hugging Face path with its redirect, the SHA-256, a wrong checksum, a missing submodule, Ctrl-C and SIGTERM, two processes at once, the progress in a log file, `--download-only` and `--no-download`. |
+| `tests/test_weights.py` | no GPU, a local HTTP server | The checkpoints at their pinned commit with their SHA-256, the submodule required first, the node's `STORE`, `--download-only` and `--no-download`, a start that stops after its weights step without a GPU. The download itself: the core's tests. |
 | `tests/test_boxer.py` | a GPU and the checkpoints | The semi-dense points from the GPU against Boxer's own, on a synthetic depth image. Two tests need the simulation frame `tests/data/sim_ycb*.png`, which this repository does not contain. They skip. |
 
 ## What we measured on the simulation

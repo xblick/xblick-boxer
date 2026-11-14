@@ -11,7 +11,7 @@ traps (Zenoh sessions and routers, CUDA rings, hanging tests): AGENTS.md of the 
 
 ```bash
 tools/setup.sh                            # submodule, .venv from uv.lock, then xblick-boxer --download-only
-.venv/bin/python -m pytest tests/test_weights.py -q   # CPU, 10 s: downloads from a local HTTP server
+.venv/bin/python -m pytest tests/test_weights.py -q   # CPU, 4 s: the node's files and its start up to the weights (the download: the core's tests)
 .venv/bin/xblick-boxer --download-only    # checkpoints (1.2 GB) into third_party/boxer/ckpts if missing, SHA-256
 .venv/bin/python -m pytest tests -q       # always name tests/: plain pytest collects third_party/boxer and fails
 .venv/bin/ruff check src tests            # lint: 120 columns, third_party excluded (pyproject [tool.ruff])
@@ -21,7 +21,7 @@ xblick rerun --spawn                       # viewer
 ```
 
 - `tests/test_node.py`: conversions (quaternions, vision_msgs, depth), no GPU.
-- `tests/test_weights.py`: the download against a local HTTP server, no GPU.
+- `tests/test_weights.py`: the node's files and its start up to the weights, no GPU (the download: the core's tests).
 - `--no-download`: a start with a missing checkpoint ends with one line (exit 1). Excludes `--download-only`.
 - `tests/test_boxer.py` (GPU, checkpoints): GPU semi-dense points against Boxer's own on a synthetic depth image. Two
   tests need the simulation frame `tests/data/sim_ycb*.png`, which this branch does not contain: they skip.
@@ -41,7 +41,7 @@ xblick rerun --spawn                       # viewer
   semi-dense points (`sdp_from_depth`) on the GPU.
 - A frame without boxes publishes empty arrays, so viewers clear their boxes.
 - Weights: `weights.py` is the one list (`CHECKPOINTS`: SHA-256, size; `REVISION`: the commit of `facebook/boxer` that main was on 2026-11-14;
-  `boxer.py` imports it). `weights.ensure` runs at the start before the models load; `--download-only` runs it alone.
+  `boxer.py` imports it). `weights.STORE.ensure` runs at the start before the models load; `--download-only` runs it alone.
   All there: no network, no file written (`test_weights.py` checks it). `REQUIRED`: the submodule first, the
   checkpoints go into it. Downloads: `<name>.part` in `ckpts/`, renamed after the SHA-256 check, under the lock
   `ckpts/.download.lock`. Never let a partial or unchecked file get its final name. No fallbacks.
@@ -63,11 +63,11 @@ xblick rerun --spawn                       # viewer
 - **Checkpoints directory.** Symptom: untracked content in the submodule. Cause: Boxer's `.gitignore` ignores
   `ckpts/` only as a directory, a symlink named `ckpts` is not ignored. Fix: `third_party/boxer/ckpts` must be a real
   directory.
-- **`--download-only` and required options.** `weights.parse_args` lifts `required` of `--camera` and `--labels`
+- **`--download-only` and required options.** `xblick.weights.parse_args` lifts `required` of `--camera` and `--labels`
   when the token `--download-only` is spelled out. `download_only` is in `leave_out` of `declare_options`;
   `no_download` is a read-only parameter.
 - **Wrong SHA-256 after a download.** The `.part` file stays, the error names it. Remove it, start again. Ctrl-C
-  during a download: exit 130, SIGTERM: 143 (`weights._stoppable`), the `.part` file removed.
+  during a download: exit 130, SIGTERM: 143 (`xblick.weights`), the `.part` file removed.
 - **OWLv2 confuses similar objects** (cracker box named "sugar box"). A prompt problem, no lifting problem.
 - **`--labels`.** Words, each also comma-separated.
 - **Depth** must be in the colour camera's geometry (`depth_to_color` on the Azure Kinect), 16UC1 mm or
@@ -80,7 +80,7 @@ xblick rerun --spawn                       # viewer
 | Path | Content |
 | --- | --- |
 | `src/xblick_boxer/node.py` | the node: options, inputs, pairing, two-stage pipeline, publishing |
-| `src/xblick_boxer/weights.py` | `CHECKPOINTS`, `TERMS`, `needed`, `ensure`, `--download-only`/`--no-download`; from `Weight` on the same in every node |
+| `src/xblick_boxer/weights.py` | `CHECKPOINTS`, `TERMS`, `needed`, `STORE` (the core's `xblick.weights.Store`: the download, `--download-only`/`--no-download`) |
 | `src/xblick_boxer/boxer.py` | Boxer on one image: OWLv2, BoxerNet, `sdp_from_depth`, Boxer's imports |
 | `tests/` | node and GPU tests |
 | `third_party/boxer` (submodule), its `ckpts/` | Boxer's code at a fixed commit, the checkpoints the node downloads, `.download.lock` |

@@ -43,6 +43,7 @@ import time
 
 import xblick as db
 from xblick import mps, node, poses, tensors, topics
+from xblick import weights as xblick_weights
 from xblick.camera import check_local
 from xblick.history import PartnerHistory
 from xblick.poses import CameraPoses
@@ -109,15 +110,15 @@ def main(argv=None) -> int:
     parser.add_argument("--features", action="store_true",
                         help="publish BoxerNet's DINOv3 features of every frame on <camera>/<node>/dino while somebody "
                              "subscribes (on a frame without 2D boxes DINOv3 then runs for them alone)")
-    weights.add_arguments(parser)  # --download-only (a mode of the command line), --no-download
+    xblick_weights.add_arguments(parser)  # --download-only (a mode of the command line), --no-download
     add_arguments(parser)  # --connect, --listen, --config; default: the PC's Zenoh router
     # --max-hz: at most 30 colour frames/s by default (0 or none: every frame)
     # --local: auto (the CUDA ring on this GPU, else shared memory), shm or cuda
     node.add_arguments(parser, max_hz=30.0, local=("auto", "shm", "cuda"))
     node.Parameters.add_arguments(parser)  # --param NAME:=VALUE, --params-file, --dump-params, --params-read-only
-    args = weights.parse_args(parser, argv)  # --download-only: --camera and --labels not required
+    args = xblick_weights.parse_args(parser, argv)  # --download-only: --camera and --labels not required
     if args.download_only:
-        return weights.download_only(weights.needed())
+        return weights.STORE.download_only(weights.needed())
     mps.check()  # with CUDA_MPS_PIPE_DIRECTORY (MPS meant) its daemon has to run: else stop here
     camera = topics.check_name(args.camera)
     # the options as parameters (the terminal interface shows them): read-only, but LIVE and the labels
@@ -133,11 +134,11 @@ def main(argv=None) -> int:
 
     node.start("xblick-boxer", max_hz=args.max_hz, local=args.local)
     try:
-        weights.ensure(weights.needed(), download=not args.no_download)
-    except weights.WeightsError as error:
+        weights.STORE.ensure(weights.needed(), download=not args.no_download)
+    except xblick_weights.WeightsError as error:
         params.close()
         session.close()
-        return weights.fail(error)
+        return weights.STORE.fail(error)
 
     import torch  # noqa: PLC0415 - with the models, after the arguments are checked
 

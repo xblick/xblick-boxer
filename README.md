@@ -113,7 +113,7 @@ The measurements, the method and what did not help: [docs/performance.md](docs/p
 
 ## Limits
 
-- Version 0.2.2. We tested the node on a simulation. We have not tested it on a robot.
+- Version 0.2.3. We tested the node on a simulation. We have not tested it on a robot.
 - OWLv2 confuses similar objects. It names the cracker box "sugar box" in most frames.
 - The node does not use Boxer's tracking or its multi-view fusion. A box has no id over frames.
 - The node skips a frame whose pose or depth does not arrive.
