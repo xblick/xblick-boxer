@@ -84,3 +84,9 @@ xblick rerun --spawn                       # viewer
 | `--max-offset-ms` / `--pose-wait-ms` | half the depth's frame period / 200 |
 | `--max-hz` / `--local` / `--device` | 30 / `auto` / `cuda` |
 | Environment | `UV` (setup), `CUDA_MPS_PIPE_DIRECTORY` (MPS expected) |
+
+## Model terms
+
+Before a download `tools/setup.sh` names the model's terms and asks. Without a terminal it needs
+`--accept-model-terms` or `XBLICK_BOXER_ACCEPT_MODEL_TERMS=yes`. Only the user may decide to give them: never pass
+them on your own.

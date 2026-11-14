@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1 (2026-11-14)
+
+`tools/setup.sh` names Boxer's terms (CC BY-NC 4.0) before it downloads Boxer's code and checkpoints and asks whether
+to go on. A script without a terminal passes `--accept-model-terms` or sets `XBLICK_BOXER_ACCEPT_MODEL_TERMS=yes`; without
+either the script ends with an error.
+
 ## 0.2.0 (2026-11-13)
 
 Every name in code, on the wire and on disk is `xblick` now. Only the prose name of the project stays Durchblick.

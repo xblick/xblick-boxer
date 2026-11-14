@@ -42,6 +42,15 @@ The script does three things. It fetches Boxer's source as a git submodule. It d
 (1.2 GB) from Hugging Face and checks their SHA-256. It creates `.venv` exactly as `uv.lock` fixes it, with
 PyTorch for CUDA 13. A second call does only what changed.
 
+Before it downloads Boxer, the script names Boxer's terms (CC BY-NC 4.0: no commercial use, credit to its authors)
+and asks whether to go on. A script without a terminal accepts them with a flag or a variable. Without either it
+ends with an error and downloads nothing:
+
+```bash
+tools/setup.sh --accept-model-terms
+XBLICK_BOXER_ACCEPT_MODEL_TERMS=yes tools/setup.sh
+```
+
 ## Run
 
 Start the node on a camera. `robot/camera` is an example name. The node connects to the Zenoh router of the
@@ -95,7 +104,7 @@ The measurements, the method and what did not help: [docs/performance.md](docs/p
 
 ## Limits
 
-- Version 0.2.0. We tested the node on a simulation. We have not tested it on a robot.
+- Version 0.2.1. We tested the node on a simulation. We have not tested it on a robot.
 - OWLv2 confuses similar objects. It names the cracker box "sugar box" in most frames.
 - The node does not use Boxer's tracking or its multi-view fusion. A box has no id over frames.
 - The node skips a frame whose pose or depth does not arrive.
