@@ -14,8 +14,10 @@ This page lists what xblick-boxer reads, what it publishes, and every option of 
 `depth_to_color` has it. `--depth` names the stream.
 
 The node pairs each colour frame with the depth frame whose stamp is nearest. The two stamps may differ by at most
-`--max-offset-ms`. The default is half the frame period of the depth stream, which the node measures. The node
-reads the depth frame together with the colour frame.
+`--max-offset-ms`, 20 ms by default. The value is fixed and covers the cameras that we use: an Azure Kinect stamps
+the colour and the depth of one capture up to 17 ms apart, and the rc_visard gives a depth frame the stamp of its left
+image. A colour frame without a depth frame that close is skipped and counted. The node reads the depth frame together
+with the colour frame.
 [Pairing streams](https://github.com/xblick/xblick/blob/main/docs/guides/pairing-streams.md) describes the mechanism.
 
 With `--no-depth` the node needs no depth stream. Boxer then estimates distances from the image alone.
@@ -71,9 +73,9 @@ counts the skipped frames by cause: no pose, no depth, no `camera_info`.
 | `--node` | `boxer` | The part of the topic names after the camera. |
 | `--thresh2d` | 0.2 | The score threshold of OWLv2. Live: it changes while the node runs. |
 | `--thresh3d` | 0.5 | The confidence threshold of BoxerNet. Live: it changes while the node runs. |
-| `--max-offset-ms` | half the depth's frame period | The largest difference between the stamps of a colour frame and its depth frame. `0` demands equal stamps. |
+| `--max-offset-ms` | 20 | The largest difference between the stamps of a colour frame and its depth frame. A colour frame without a depth frame that close is skipped and counted. `0` demands equal stamps. |
 | `--pose-wait-ms` | 200 | How long the node waits for the pose of a frame. Live: it changes while the node runs. |
-| `--device` | `cuda` | The GPU of the node. |
+| `--device` | `cuda` | The GPU of the node: `cuda` is GPU 0, `cuda:N` is GPU N. A GPU that cannot be used ends the node with one line. |
 | `--no-download` | off | End at once when a checkpoint is missing, and name it. The node downloads nothing. |
 | `--download-only` | off | Download the missing checkpoints, check their SHA-256 and end. The node needs no camera, Zenoh router or GPU for it, and `--camera` and `--labels` may be left out. |
 | `--weights-dir DIR` | the cache directory | The directory of the weights, in place of the node's cache directory `~/.cache/xblick/boxer/`. A start option, read-only as a parameter. |

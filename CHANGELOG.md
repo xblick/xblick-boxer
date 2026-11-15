@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.5 (2026-11-15)
+
+A fixed pairing offset and a fixed GPU.
+
+### Changed
+
+- Changed default: `--max-offset-ms` is a fixed 20 ms, no longer half the depth stream's measured frame period. It pairs
+  the colour and depth of one capture of the Azure Kinect (up to 17 ms apart) and of the rc_visard (equal stamps). A
+  colour frame without a depth frame that close is skipped and counted, as before.
+- `--device cuda` is GPU 0, `cuda:N` GPU N. Another value, or a GPU that cannot be used, ends the node with one line.
+- The start line says where the model computes (`model on cuda:0`).
+- README: how to cite Boxer.
+
+Compatible with earlier clients: nothing on the wire changed.
+
 ## 0.2.4 (2026-11-14)
 
 - The weights moved out of the checkout into the node's cache directory, `~/.cache/xblick/boxer/`. `XBLICK_HOME` and

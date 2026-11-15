@@ -7,7 +7,7 @@
                      [--connect ...] [--listen ...] [--config FILE]   (default: the PC's Zenoh router)
 
 Reads the newest colour frame with its camera_info and, taken with it, the depth frame of its time (the nearest within
---max-offset-ms, by default half the depth's frame period; 16UC1 mm or 32FC1 m, in the colour camera's geometry: the
+--max-offset-ms, by default 20; 16UC1 mm or 32FC1 m, in the colour camera's geometry: the
 simulation's depth, the Azure Kinect's depth_to_color) and the camera's pose at the frame's stamp from ``<camera>/tf``
 (Boxer needs the gravity direction, the world's z): the pose of that stamp, else interpolated between the two around it
 (xblick.poses, Durchblick 0.3.4: the robot's camera poses come with its state, at their own rate).
@@ -51,6 +51,17 @@ from xblick.poses import CameraPoses
 from xblick.session import add_arguments, open_from_args
 
 from . import weights
+
+MAX_OFFSET_MS = 20.0  # --max-offset-ms: one capture's colour and depth (an Azure Kinect: up to 17 ms apart), not two
+
+
+def parse_device(text: str) -> str:
+    """``--device``: cuda (GPU 0) or cuda:N, as ``cuda:N``."""
+    if text == "cuda":
+        return "cuda:0"
+    if text.startswith("cuda:") and text[5:].isdigit():
+        return text
+    raise argparse.ArgumentTypeError(f"{text!r}: cuda (GPU 0) or cuda:N")
 
 
 def to_messages(result, header: db.Header) -> tuple[db.Detection2DArray, db.Detection3DArray]:
@@ -97,13 +108,15 @@ def main(argv=None) -> int:
     parser.add_argument("--node", default="boxer", help="the results' part of the topic: <camera>/<node>/...")
     parser.add_argument("--thresh2d", type=float, default=0.2, help="OWLv2's score threshold")
     parser.add_argument("--thresh3d", type=float, default=0.5, help="BoxerNet's confidence threshold")
-    parser.add_argument("--max-offset-ms", type=float, default=None,
-                        help="largest difference of the colour and the depth frame's stamps that pairs them (default: "
-                             "half the depth's frame period, measured: each colour frame with its nearest depth "
-                             "frame; 0: equal stamps)")
+    parser.add_argument("--max-offset-ms", type=float, default=MAX_OFFSET_MS,
+                        help="pair a colour frame with the nearest depth frame at most this far apart, else skip it "
+                             "(counted); 20 covers the Azure Kinect's colour and depth of one capture (up to 17 ms "
+                             "apart) and the rc_visard's (equal stamps), and pairs no neighbouring frame of a 30 or "
+                             "15 Hz depth stream (default: %(default)s); 0: only equal stamps")
     parser.add_argument("--pose-wait-ms", type=float, default=200.0,
                         help="how long to wait for the camera's pose at a frame's stamp on <camera>/tf")
-    parser.add_argument("--device", default="cuda")
+    parser.add_argument("--device", type=parse_device, default="cuda:0",
+                        help="the GPU: cuda (GPU 0) or cuda:N; a GPU that cannot be used is an error (default: cuda:0)")
     parser.add_argument("--dino-beside-owl", action="store_true",
                         help="compute BoxerNet's DINOv3 features beside OWLv2 on a stream of their own (shorter time "
                              "to the boxes where the GPU has room; slower on a GPU shared with other jobs; README, "
@@ -121,6 +134,8 @@ def main(argv=None) -> int:
     if args.download_only:
         return weights.store_for(parser, args).download_only(
             weights.needed(), options=weights.options(args))
+    if args.max_offset_ms < 0:
+        parser.error("--max-offset-ms: not negative")
     mps.check()  # with CUDA_MPS_PIPE_DIRECTORY (MPS meant) its daemon has to run: else stop here
     camera = topics.check_name(args.camera)
     # the options as parameters (the terminal interface shows them): read-only, but LIVE and the labels
@@ -148,7 +163,16 @@ def main(argv=None) -> int:
 
     from .boxer import Boxer  # loads torch and the models: after the arguments are checked
 
-    boxer = Boxer(labels, args.thresh2d, args.thresh3d, args.device, dino_beside_owl=args.dino_beside_owl,
+    device = torch.device(args.device)
+    if device.index >= torch.cuda.device_count():  # no CUDA, or not that many GPUs: one line, never another device
+        print(f"xblick-boxer: --device {args.device}: no such GPU ({torch.cuda.device_count()} visible)",
+              file=sys.stderr, flush=True)
+        params.close()
+        session.close()
+        return 1
+    # Boxer's own code places its models on "cuda", the current GPU (OWLv2's wrapper tests for that name): this one
+    torch.cuda.set_device(device)
+    boxer = Boxer(labels, args.thresh2d, args.thresh3d, "cuda", dino_beside_owl=args.dino_beside_owl,
                   weights=store.root)
     features_pub = None  # with the first frame's camera_info (--features)
     world = CameraPoses(session, camera)
@@ -163,12 +187,12 @@ def main(argv=None) -> int:
     report = node.Reporter(session, camera, args.node, "xblick-boxer", max_hz=args.max_hz)
     report.watch(color)
     print(f"xblick-boxer: {color_base}" + (f" + {depth_base}" if depth_base else "") +
-          f" -> {camera}/{args.node}/{{detections_2d,boxes_3d}}, prompts {labels}", flush=True)
+          f" -> {camera}/{args.node}/{{detections_2d,boxes_3d}}, prompts {labels}; model on {args.device}", flush=True)
     counts = report.counts
     stop = threading.Event()
     # the depth samples of the last second; a colour frame's depth is read when the colour frame is taken, before OWLv2
     # works on it (a shared-memory or CUDA sample is only valid until the camera reuses its ring slot)
-    max_offset_ns = None if args.max_offset_ms is None else round(args.max_offset_ms * 1e6)
+    max_offset_ns = round(args.max_offset_ms * 1e6)
     depth = PartnerHistory(depth_sub, 30, max_offset_ns) if depth_sub is not None else None
 
     # the first stage in its own thread: OWLv2 on the newest colour frame while the main thread lifts the previous
@@ -238,11 +262,10 @@ def main(argv=None) -> int:
                         size = detections.size
                         grid = boxer.hw // 16
                         fx, fy, cx, cy = boxer.feature_camera(k, size)
-                        device = torch.device(args.device)
                         features_pub = db.CameraPublisher(
                             session, f"{camera}/{args.node}/dino", encoding="16FC384", frame_id=frame_id,
                             camera_info=db.CameraInfo.pinhole(grid, grid, fx, fy, cx, cy, frame_id=frame_id),
-                            source="boxer", cuda_device=device.index if device.index is not None else 0,
+                            source="boxer", cuda_device=device.index,
                             codec=None)  # half floats, 384 channels: no compressed form
                     # the features cost only while somebody reads them (DINOv3 on frames without boxes)
                     boxer.features = features_pub is not None and features_pub.subscribed

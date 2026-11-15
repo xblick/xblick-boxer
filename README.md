@@ -132,7 +132,7 @@ The measurements, the method and what did not help: [docs/performance.md](docs/p
 
 ## Limits
 
-- Version 0.2.4. We tested the node on a simulation. We have not tested it on a robot.
+- Version 0.2.5. We tested the node on a simulation. We have not tested it on a robot.
 - OWLv2 confuses similar objects. It names the cracker box "sugar box" in most frames.
 - The node does not use Boxer's tracking or its multi-view fusion. A box has no id over frames.
 - The node skips a frame whose pose or depth does not arrive.
@@ -159,3 +159,17 @@ a fixed commit, and the setup script downloads the checkpoints. This repository 
 The function `sdp_from_depth` in `src/xblick_boxer/boxer.py` is adapted from `BaseLoader.sdp_from_depth` in
 Boxer's `loaders/base_loader.py`. It computes the same points with PyTorch on the device of the depth image.
 [NOTICE](NOTICE) lists the changes.
+
+## Citation
+
+This node uses Boxer (facebookresearch/boxer). If you use it in research, cite their work. The entries below are copied
+from [its README](https://github.com/facebookresearch/boxer/blob/1f86542dc342a4b1d474c87c97c5d1d6566d9148/README.md):
+
+```bibtex
+@inproceedings{boxer2026,
+      title={Boxer: Robust Lifting of Open-World 2D Bounding Boxes to 3D},
+      author={Daniel DeTone and Tianwei Shen and Fan Zhang and Lingni Ma and Julian Straub and Richard Newcombe and Jakob Engel},
+      booktitle={European Conference on Computer Vision (ECCV)},
+      year={2026},
+}
+```

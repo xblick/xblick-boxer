@@ -39,6 +39,8 @@ xblick rerun --spawn                       # viewer
 - Fail fast, never process a frame without its parts. Skip and count a frame whose pose (`--pose-wait-ms`) or depth
   (`--max-offset-ms`) does not come. `--local cuda` with a same-host camera without a CUDA ring is an error. A missing
   submodule stops the node with what to do (`tools/setup.sh`); never clone it at run time.
+- `--device cuda:N`: the node makes GPU N the current one and gives Boxer `"cuda"` (OWLv2's wrapper tests for that
+  name); the subscribers and the CUDA ring get `cuda:N`.
 - Boxer's code stays unchanged. It is no package: `boxer.py` puts `third_party/boxer` on `sys.path`. Make speed-ups
   around it (inputs on the GPU, bfloat16 weights). Boxes must stay as they were: compare against the current boxes
   on the test frame after any change.
@@ -103,6 +105,6 @@ xblick rerun --spawn                       # viewer
 | `--features` | image stream `<camera>/boxer/dino`, `16FC384`, 60 x 60 patches, read by xblick-nvblox |
 | `--node` | `boxer` |
 | `--thresh2d` / `--thresh3d` | 0.2 / 0.5 |
-| `--max-offset-ms` / `--pose-wait-ms` | half the depth's frame period / 200 |
+| `--max-offset-ms` / `--pose-wait-ms` | 20 (fixed) / 200 |
 | `--max-hz` / `--local` / `--device` | 30 / `auto` / `cuda` |
 | Environment | `UV` (setup), `CUDA_MPS_PIPE_DIRECTORY` (MPS expected), `XBLICK_HOME`, `XDG_CACHE_HOME` (cache directory) |
