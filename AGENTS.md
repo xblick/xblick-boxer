@@ -2,7 +2,7 @@
 
 xblick-boxer: Meta's Boxer as a Durchblick vision node (Python 3.12, uv project). OWLv2 finds 2D boxes for text
 prompts (`--labels`), BoxerNet lifts them to oriented 3D boxes from DINOv3 features, depth points and gravity (from
-the camera's pose on `<camera>/tf`). Human documentation: README.md (entry), docs/topics.md, docs/performance.md,
+the camera's pose on `<camera>/tf_static` and `<camera>/tf`). Human documentation: README.md (entry), docs/topics.md, docs/performance.md,
 docs/design.md. Style of all documentation: the core's docs/project/writing-docs.md. Transport-wide
 traps (Zenoh sessions and routers, CUDA rings, hanging tests): AGENTS.md of the core repository
 (github.com/xblick/xblick).
@@ -20,7 +20,7 @@ tools/setup.sh                            # submodule, .venv from uv.lock, then 
 xblick rerun --spawn                       # viewer
 ```
 
-- `tests/test_node.py`: conversions (quaternions, vision_msgs, depth), no GPU.
+- `tests/test_node.py`: conversions (quaternions, vision_msgs, depth) and the camera's pose in the world, no GPU.
 - `tests/test_weights.py`: the node's files and its start up to the weights, no GPU (the download: the core's tests).
 - `--no-download`: a start with a missing checkpoint ends with one line (exit 1). Excludes `--download-only`.
 - `tests/test_boxer.py` (GPU, checkpoints): GPU semi-dense points against Boxer's own on a synthetic depth image. Two
@@ -36,8 +36,8 @@ xblick rerun --spawn                       # viewer
   `store = weights.store_for(parser, args)` (`--weights-dir`) for `download_only`, `ensure` and `fail`, with
   `options=weights.options(args)`; model code takes its paths from `store.root`. `FORMER` (the checkout's `third_party/boxer/ckpts/`) is never
   read: the store prints the command that moves it. The core's `docs/reference/files.md` has the rule. Boxer's own checkpoint globals: `boxer.use_checkpoints`.
-- Fail fast, never process a frame without its parts. Skip and count a frame whose pose (`--pose-wait-ms`) or depth
-  (`--max-offset-ms`) does not come. `--local cuda` with a same-host camera without a CUDA ring is an error. A missing
+- Fail fast, never process a frame without its parts. Skip and count a frame whose pose (`--pose-wait-ms`; a
+  `TransformError` of `poses.TransformBuffer`, never an identity) or depth (`--max-offset-ms`) does not come. `--local cuda` with a same-host camera without a CUDA ring is an error. A missing
   submodule stops the node with what to do (`tools/setup.sh`); never clone it at run time.
 - `--device cuda:N`: the node makes GPU N the current one and gives Boxer `"cuda"` (OWLv2's wrapper tests for that
   name); the subscribers and the CUDA ring get `cuda:N`.
@@ -100,7 +100,7 @@ xblick rerun --spawn                       # viewer
 
 | What | Value |
 | --- | --- |
-| Inputs | `<camera>/color` + `camera_info`, `<camera>/depth` (16UC1 mm or 32FC1 m), `<camera>/tf` |
+| Inputs | `<camera>/color` + `camera_info`, `<camera>/depth` (16UC1 mm or 32FC1 m), `<camera>/tf_static` and `<camera>/tf` |
 | Outputs | `<camera>/boxer/detections_2d`, `<camera>/boxer/boxes_3d` (`vision_msgs`), status `boxer` on `<camera>/diagnostics` |
 | `--features` | image stream `<camera>/boxer/dino`, `16FC384`, 60 x 60 patches, read by xblick-nvblox |
 | `--node` | `boxer` |

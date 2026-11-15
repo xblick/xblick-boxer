@@ -22,7 +22,7 @@ frame of that colour frame.
 
 ```mermaid
 flowchart LR
-  C["color, depth, tf"] --> D["Stage 1: Boxer.detect (OWLv2), CUDA stream 1"]
+  C["color, depth, tf_static, tf"] --> D["Stage 1: Boxer.detect (OWLv2), CUDA stream 1"]
   D -- "2D boxes" --> L["Stage 2: Boxer.lift (BoxerNet), CUDA stream 2"]
   L --> P2["detections_2d"]
   L --> P3["boxes_3d"]
@@ -52,8 +52,9 @@ the node's own functions. The resize is bilinear as OpenCV's, without the roundi
 
 **A frame without boxes publishes empty arrays.** A viewer can then remove the boxes of the frame before.
 
-**The pose may have another stamp than the image.** A robot often publishes camera poses with its joint state, at
-their own rate. The node interpolates the pose at the stamp of the image with Durchblick's `poses.CameraPoses`.
+**The pose may be fixed or have another stamp than the image.** A fixed camera has its pose on `tf_static`. A robot
+often publishes camera poses with its joint state, at their own rate. The node looks the pose up at the stamp of the
+image with Durchblick's `poses.TransformBuffer`, which reads both topics and interpolates between two poses on `tf`.
 
 **The licence stays separate.** Boxer's code and checkpoints are CC-BY-NC 4.0. Boxer is a git submodule at a fixed
 commit, and the node downloads the checkpoints. This repository contains no copy of either.
@@ -103,7 +104,7 @@ Always name `tests`. Plain `pytest` also collects `third_party/boxer` and fails.
 
 | File | Needs | What it checks |
 | --- | --- | --- |
-| `tests/test_node.py` | no GPU | The conversions: quaternions, `vision_msgs`, depth. |
+| `tests/test_node.py` | no GPU | The conversions: quaternions, `vision_msgs`, depth. The pose of a fixed camera from `tf_static` alone, and a missing pose. |
 | `tests/test_weights.py` | no GPU, a local HTTP server | The checkpoints at their pinned commit with their SHA-256, the submodule required first, the node's `STORE`, `--download-only` and `--no-download`, a start that stops after its weights step without a GPU. The download itself: the core's tests. |
 | `tests/test_boxer.py` | a GPU and the checkpoints | The semi-dense points from the GPU against Boxer's own, on a synthetic depth image. Two tests need the simulation frame `tests/data/sim_ycb*.png`, which this repository does not contain. They skip. |
 

@@ -8,9 +8,11 @@
 
 Reads the newest colour frame with its camera_info and, taken with it, the depth frame of its time (the nearest within
 --max-offset-ms, by default 20; 16UC1 mm or 32FC1 m, in the colour camera's geometry: the
-simulation's depth, the Azure Kinect's depth_to_color) and the camera's pose at the frame's stamp from ``<camera>/tf``
-(Boxer needs the gravity direction, the world's z): the pose of that stamp, else interpolated between the two around it
-(xblick.poses, Durchblick 0.3.4: the robot's camera poses come with its state, at their own rate).
+simulation's depth, the Azure Kinect's depth_to_color) and the pose of the frame's camera frame in the world at its
+stamp (Boxer needs the gravity direction, the world's z) from ``<camera>/tf_static`` and ``<camera>/tf``
+(xblick.poses.TransformBuffer): a fixed camera's pose (``xblick cam --pose``) holds at every stamp, a moving camera's
+is that of the stamp, else interpolated between the two around it (a robot's camera poses come with its state, at
+their own rate).
 Publishes, stamped as the frame and in its camera frame:
 
 * ``<camera>/<node>/detections_2d``  vision_msgs/Detection2DArray: OWLv2's 2D boxes (pixels of the colour image)
@@ -23,8 +25,9 @@ and with --features, while somebody subscribes to it:
   (``cuda`` transport, Durchblick's CUDA ring) for readers on the same host, else ``raw`` (2.8 MB a frame)
 
 each detection with its prompt as class_id and its score; a frame without boxes publishes empty arrays (a reader's
-view clears). A frame whose pose (or, with depth, whose depth) does not come is skipped and counted; the counts go to
-``<camera>/diagnostics`` (status ``boxer``) once a second. It processes as fast as Boxer runs, always the newest
+view clears). A frame whose pose (or, with depth, whose depth) does not come is skipped and counted, never posed as
+the world's origin; the counts go to ``<camera>/diagnostics`` (status ``boxer``) once a second, with the last missing
+pose's reason. It processes as fast as Boxer runs, always the newest
 frame, in two stages: OWLv2 on the next frame while BoxerNet works on this one (about 20 ms per frame on an RTX PRO
 6000: README, "Speed").
 
@@ -46,13 +49,10 @@ import xblick as db
 from xblick import mps, node, poses, tensors, topics
 from xblick import weights as xblick_weights
 from xblick.camera import check_local
-from xblick.history import PartnerHistory
-from xblick.poses import CameraPoses
+from xblick.history import PAIR_MAX_OFFSET_NS, PartnerHistory
 from xblick.session import add_arguments, open_from_args
 
 from . import weights
-
-MAX_OFFSET_MS = 20.0  # --max-offset-ms: one capture's colour and depth (an Azure Kinect: up to 17 ms apart), not two
 
 
 def parse_device(text: str) -> str:
@@ -62,6 +62,27 @@ def parse_device(text: str) -> str:
     if text.startswith("cuda:") and text[5:].isdigit():
         return text
     raise argparse.ArgumentTypeError(f"{text!r}: cuda (GPU 0) or cuda:N")
+
+
+class WorldPoses:
+    """A camera frame's pose in the world at a stamp, from ``<camera>/tf_static`` and ``<camera>/tf``
+    (``poses.TransformBuffer``): a fixed camera's and a moving camera's alike."""
+
+    def __init__(self, session, camera: str):
+        self.transforms = poses.TransformBuffer(session, camera)
+        self.why: str | None = None  # the last missing pose's reason (one line), for the report
+
+    def at(self, frame_id: str, stamp_ns: int, seconds: float):
+        """The 4x4 pose of ``frame_id`` in the world, waiting up to ``seconds``; None if there is none (the frame is
+        skipped, never posed at the world's origin), the reason in ``why``."""
+        try:
+            return self.transforms.lookup(topics.WORLD, frame_id, stamp_ns, seconds)
+        except poses.TransformError as error:
+            self.why = str(error)
+            return None
+
+    def close(self):
+        self.transforms.close()
 
 
 def to_messages(result, header: db.Header) -> tuple[db.Detection2DArray, db.Detection3DArray]:
@@ -108,13 +129,14 @@ def main(argv=None) -> int:
     parser.add_argument("--node", default="boxer", help="the results' part of the topic: <camera>/<node>/...")
     parser.add_argument("--thresh2d", type=float, default=0.2, help="OWLv2's score threshold")
     parser.add_argument("--thresh3d", type=float, default=0.5, help="BoxerNet's confidence threshold")
-    parser.add_argument("--max-offset-ms", type=float, default=MAX_OFFSET_MS,
+    parser.add_argument("--max-offset-ms", type=float, default=PAIR_MAX_OFFSET_NS / 1e6,
                         help="pair a colour frame with the nearest depth frame at most this far apart, else skip it "
                              "(counted); 20 covers the Azure Kinect's colour and depth of one capture (up to 17 ms "
                              "apart) and the rc_visard's (equal stamps), and pairs no neighbouring frame of a 30 or "
                              "15 Hz depth stream (default: %(default)s); 0: only equal stamps")
     parser.add_argument("--pose-wait-ms", type=float, default=200.0,
-                        help="how long to wait for the camera's pose at a frame's stamp on <camera>/tf")
+                        help="how long to wait for the camera's pose at a frame's stamp on <camera>/tf_static and "
+                             "<camera>/tf")
     parser.add_argument("--device", type=parse_device, default="cuda:0",
                         help="the GPU: cuda (GPU 0) or cuda:N; a GPU that cannot be used is an error (default: cuda:0)")
     parser.add_argument("--dino-beside-owl", action="store_true",
@@ -175,7 +197,7 @@ def main(argv=None) -> int:
     boxer = Boxer(labels, args.thresh2d, args.thresh3d, "cuda", dino_beside_owl=args.dino_beside_owl,
                   weights=store.root)
     features_pub = None  # with the first frame's camera_info (--features)
-    world = CameraPoses(session, camera)
+    world = WorldPoses(session, camera)
     color = db.ImageSubscriber(session, color_base, transport="auto", camera_info=True, local=args.local,
                                max_hz=args.max_hz, device=args.device)
     depth_sub = (db.ImageSubscriber(session, depth_base, transport="auto", local=args.local, device=args.device)
@@ -251,7 +273,8 @@ def main(argv=None) -> int:
                     counts["no_depth"] += 1
                 elif info is None:
                     counts["no_info"] += 1
-                elif (world_from_camera := world.wait(stamp, params["pose_wait_ms"] / 1000.0)) is None:
+                elif (world_from_camera := world.at(info.header.frame_id or frame.header.frame_id, stamp,
+                                                    params["pose_wait_ms"] / 1000.0)) is None:
                     counts["no_pose"] += 1
                 else:
                     depth_m = tensors.depth_metres(depth_frame, args.device) if depth_frame is not None else None
@@ -287,8 +310,9 @@ def main(argv=None) -> int:
                 skipped = {k: d[k] for k in ("no_pose", "no_depth", "no_info")}
                 waiting = None if d["frames"] else (f"{color_base}: {color.describe()}" + (
                     f"; {depth_base}: {depth_sub.describe()}" if depth_sub is not None else ""))
-                level, message = node.state(f"{d['frames'] / seconds:.2f} frames/s",
-                                            [f"{v} {k.replace('_', ' ')}" for k, v in skipped.items() if v], waiting)
+                problems = [f"{v} {k.replace('_', ' ')}" + (f" ({world.why})" if k == "no_pose" else "")
+                            for k, v in skipped.items() if v]
+                level, message = node.state(f"{d['frames'] / seconds:.2f} frames/s", problems, waiting)
                 report.publish(level, message, {"frames/s": d["frames"] / seconds,
                                                 "boxes/frame": d["boxes3d"] / max(d["frames"], 1), "ms/frame": ms,
                                                 **{k.replace("_", " "): v for k, v in skipped.items()},

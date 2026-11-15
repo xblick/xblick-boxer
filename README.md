@@ -22,7 +22,8 @@ prompts, so the node needs no fixed class list. Use it when you need the place, 
 | `<camera>/boxer/dino` | image stream, `16FC384` | With `--features`: the DINOv3 features of every frame, 60 x 60 patches. |
 | `<camera>/diagnostics` | `diagnostic_msgs/DiagnosticArray` | The status `boxer`, once a second. |
 
-The node reads `<camera>/color` with its `camera_info`, `<camera>/depth` and the camera's pose on `<camera>/tf`.
+The node reads `<camera>/color` with its `camera_info`, `<camera>/depth` and the camera's pose on `<camera>/tf_static`
+(a fixed camera, `xblick cam --pose`) or `<camera>/tf` (a moving one).
 Every result has the stamp and the camera frame of its colour frame.
 
 Details: [docs/topics.md](docs/topics.md).
@@ -132,7 +133,7 @@ The measurements, the method and what did not help: [docs/performance.md](docs/p
 
 ## Limits
 
-- Version 0.2.5. We tested the node on a simulation. We have not tested it on a robot.
+- Version 0.2.6. We tested the node on a simulation. We have not tested it on a robot.
 - OWLv2 confuses similar objects. It names the cracker box "sugar box" in most frames.
 - The node does not use Boxer's tracking or its multi-view fusion. A box has no id over frames.
 - The node skips a frame whose pose or depth does not arrive.

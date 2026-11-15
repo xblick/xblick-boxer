@@ -8,7 +8,8 @@ This page lists what xblick-boxer reads, what it publishes, and every option of 
 | --- | --- | --- |
 | `<camera>/color` | image stream with `camera_info` | The frames in which OWLv2 looks for the prompts. |
 | `<camera>/depth` | image stream, `16UC1` in mm or `32FC1` in m | The depth, in the geometry of the colour camera. |
-| `<camera>/tf` | poses | The pose of the camera in the world at the stamp of the frame. |
+| `<camera>/tf_static` | poses | A fixed camera's pose in the world (`xblick cam --pose`), valid at every stamp. |
+| `<camera>/tf` | poses | A moving camera's pose in the world at the stamp of the frame. |
 
 **Depth.** The depth image must have the geometry of the colour camera. On an Azure Kinect, the stream
 `depth_to_color` has it. `--depth` names the stream.
@@ -23,11 +24,13 @@ with the colour frame.
 With `--no-depth` the node needs no depth stream. Boxer then estimates distances from the image alone.
 
 **Pose.** BoxerNet needs the direction of gravity. The node takes it from the pose of the camera in the world and
-assumes that the world's z axis points up. The node waits up to `--pose-wait-ms` for the pose at the stamp of the
-frame. If no pose has exactly that stamp, the node interpolates between the two poses around it.
+assumes that the world's z axis points up. The node looks up the pose of the frame's camera frame in the world on
+both topics. A pose on `tf_static` holds at every stamp. On `tf`, the node waits up to `--pose-wait-ms` for the pose
+at the stamp of the frame. If no pose has exactly that stamp, the node interpolates between the two poses around it.
 
 **Skipped frames.** The node skips a frame whose pose or depth does not arrive, and counts it. It never processes a
-frame without one of its parts.
+frame without one of its parts, and never takes the world's origin for a missing pose. The status `boxer` names the
+reason of the last missing pose.
 
 ## Outputs
 

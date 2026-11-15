@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.2.6 (2026-11-15)
+
+A fixed camera's pose.
+
+### Changed
+
+- The node looks the camera's pose up with the core's `poses.TransformBuffer`, on `<camera>/tf_static` and
+  `<camera>/tf`, for the frame id of the colour image. A fixed camera with `xblick cam --pose` (its pose on
+  `tf_static`, valid at every stamp) now works as a moving one does. A frame without a pose is skipped and counted, as
+  before. The status `boxer` names the reason of the last missing pose.
+- The pose on `tf` must be that of the image's frame, or of a frame that `tf_static` links to it. Before, the node took
+  any pose in `world` on `tf`, whatever its child frame.
+- `--max-offset-ms` takes its default, 20 ms, from the core (`history.PAIR_MAX_OFFSET_NS`).
+- The node needs `xblick>=0.5.11,<0.6`.
+
+Compatible with earlier clients: nothing on the wire changed.
+
 ## 0.2.5 (2026-11-15)
 
 A fixed pairing offset and a fixed GPU.
