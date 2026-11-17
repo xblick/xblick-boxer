@@ -8,7 +8,8 @@ license-files = ["LICENSE", "NOTICE"]
 authors = [{ name = "David Schneider" }]
 requires-python = ">=3.12,<3.13"
 dependencies = [
-    "xblick>=0.5.11,<0.6",  # the Durchblick core: node, poses, tensors, mps, parameters, vision_msgs
+    # branch ros2 only: the core from its unreleased branch ros2 (--ros); main pins the release
+    "xblick @ git+https://github.com/xblick/xblick@ros2",  # the core: node, poses, tensors, mps, parameters
     # Boxer's model code (third_party/boxer: BoxerNet, DINOv3, OWLv2); its own requirements: torch>=2.0, numpy, opencv
     "torch>=2.4",
     "numpy>=1.26",
