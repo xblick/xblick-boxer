@@ -160,7 +160,5 @@ the frame to the boxes. They would not raise the rate.
   have to compare the boxes with the current ones again.
 - **Another 2D detector.** Boxer's paper names DETIC with 35 ms and SAM3. This is a choice of quality. It does not
   make the node faster.
-- We have not timed the GPU resize and the GPU depth points on the test frame.
-- We have not recorded the VRAM that the node needs.
 
 [Making a node fast](https://github.com/xblick/xblick/blob/main/docs/guides/making-a-node-fast.md) compares these findings with Durchblick's other nodes.
