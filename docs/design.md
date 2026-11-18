@@ -137,7 +137,6 @@ Notes on the table:
 
 ## Status and limits
 
-- Version 0.1.0, status of 2026-10-29. We tested the node on the simulation. We have not tested it on a robot.
 - **Tracking and fusion.** The node does not use Boxer's tracking, which gives ids over frames (`--track` in
   Boxer's `run_boxer.py`). It does not use Boxer's multi-view fusion either.
 - **Prompts.** OWLv2 confuses similar objects such as the cracker box and the sugar box. This is a problem of the
