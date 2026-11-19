@@ -32,27 +32,70 @@ Details: [docs/topics.md](docs/topics.md).
 
 - An NVIDIA GPU with CUDA. We measured on an RTX PRO 6000. Alone on that GPU the node held 1.7 GiB of VRAM
   (four labels, `--features`, 1280 x 720 at 30 frames per second, 2026-11-02).
-- Durchblick 0.5 or newer, below 0.6 (Python package `xblick`). The setup script installs it from source.
-- [uv](https://docs.astral.sh/uv/) and git.
+- Linux on x86-64 and an NVIDIA GPU with driver 580 or newer (PyTorch for CUDA 13).
+- Durchblick 0.5 or newer, below 0.6 (Python package `xblick`). The setup script installs it from PyPI.
+- git and [uv](https://docs.astral.sh/uv/). Step 1 of the installation installs them.
+- About 6 GB of disk for `.venv` and 1.2 GB for the checkpoints.
 - A depth stream in the geometry of the colour camera, and the camera's pose in a world whose z axis points up.
 - Boxer's code and checkpoints are under CC BY-NC 4.0, and so is this repository. You may not use them commercially.
 
 ## Install
 
-Clone this repository and run the setup script.
+1. Install the prerequisites. `nvidia-smi` prints the GPU and the driver version, which must be 580 or newer. On
+   Ubuntu, `sudo apt install nvidia-driver-580` and a restart install that driver. After the installation of uv, open
+   a new terminal, so that `uv` is on `PATH`.
 
-```bash
-tools/setup.sh
-```
+   ```bash
+   nvidia-smi
+   sudo apt install git
+   wget -qO- https://astral.sh/uv/install.sh | sh
+   ```
 
-The script does three things. It fetches Boxer's source as a git submodule. It creates `.venv` exactly as
-`uv.lock` fixes it, with PyTorch for CUDA 13. It runs `xblick-boxer --download-only`, which downloads Boxer's
-checkpoints (1.2 GB) from Hugging Face into `~/.cache/xblick/boxer/` and checks their SHA-256. A second call does
-only what changed.
+2. Clone this repository with its submodule, Boxer's source:
 
-Before it downloads the checkpoints, the node prints Boxer's terms (CC BY-NC 4.0: no commercial use, credit to its
-authors). The node itself also downloads missing checkpoints at its start, before it loads the models. A preparation
-script downloads without a start:
+   ```bash
+   git clone --recurse-submodules https://github.com/xblick/xblick-boxer.git
+   cd xblick-boxer
+   ```
+
+3. Run the setup script. It fetches Boxer's source, creates `.venv` exactly as `uv.lock` fixes it, with Python 3.12
+   and PyTorch for CUDA 13 (about 3 GB to download, 6 GB on disk), and downloads Boxer's checkpoints (1.2 GB) from
+   Hugging Face into `~/.cache/xblick/boxer/`. It prints Boxer's terms before the downloads (CC BY-NC 4.0: no
+   commercial use, credit to its authors) and the progress of each download. When git or uv is missing, it stops and
+   prints the command that installs it. A second call does only what changed, and after it the node needs no
+   network. `tools/setup.sh --help` describes it.
+
+   ```bash
+   tools/setup.sh
+   ```
+
+4. Install the core's command `xblick` with the viewer. uv puts it on `PATH`.
+
+   ```bash
+   uv tool install "xblick[rerun]>=0.5,<0.6"
+   ```
+
+5. Start the node on photos, without a camera. Take a few JPEG photos of a room or a table, for example in
+   `~/Pictures`. Run each command in its own terminal, in the clone. If the PC already runs a Zenoh router
+   (`xblick router` or `zenohd`), leave out the first one.
+
+   ```bash
+   xblick router                                         # the Zenoh router of this PC
+   xblick play "$HOME/Pictures/*.jpg" --camera demo/photos --fps 1 --loop --pose 0 0 1.5 0 30 0
+   .venv/bin/xblick-boxer --camera demo/photos --no-depth --labels "chair,table,cup,bottle"
+   xblick rerun                                          # the viewer
+   ```
+
+   `xblick play` shows the photos one per second as the camera `demo/photos`. Boxer needs to know where up is:
+   `--pose` places that camera 1.5 m above the floor, looking 30 degrees down. `--no-depth` makes Boxer estimate
+   distances from the image alone. Name in `--labels` what is in your photos. The viewer shows each photo with a 2D
+   box around every object that matches a label, and the 3D boxes in its 3D view. [Run](#run) uses a camera with
+   depth.
+
+### Downloads at the start
+
+The node itself also downloads missing checkpoints at its start, before it loads the models. A preparation script
+downloads without a start:
 
 ```bash
 .venv/bin/xblick-boxer --download-only
