@@ -69,10 +69,10 @@ Details: [docs/topics.md](docs/topics.md).
    tools/setup.sh
    ```
 
-4. Install the core's command `xblick` with the viewer. uv puts it on `PATH`.
+4. Install the core's command `xblick` with the viewer, video files and webcams. uv puts it on `PATH`.
 
    ```bash
-   uv tool install "xblick[rerun]>=0.5,<0.6"
+   uv tool install "xblick[rerun,video,cam]>=0.5,<0.6"
    ```
 
 5. Start the node on photos, without a camera. Take a few JPEG photos of a room or a table, for example in
